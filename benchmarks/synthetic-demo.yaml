@@ -1,0 +1,27 @@
+# Offline demo: two simulated endpoints. No key, no network, nothing is billed.
+# Every report made from this file is labeled SYNTHETIC FIXTURE DATA: the numbers show what the
+# reports look like, not how any real API performs.
+#
+#   llm-bench run --config synthetic-demo.yaml --yes
+version: 1
+name: synthetic-demo
+dataset: core-v1
+workloads: [short-answer, json-generation, long-response]
+modes: [stream, plain]
+repetitions: 3
+warmup: 1
+concurrency: 4
+max_requests: 120
+# Simulated replies are filler text, so the output checks would only fail.
+checks: false
+providers:
+  - name: sim-steady
+    preset: synthetic
+    model: synthetic-steady
+    # time_scale shrinks every simulated delay so the demo finishes in a few seconds.
+    synthetic: {ttft_ms: 300, tokens_per_s: 80, jitter: 0.15, output_tokens: 150, time_scale: 0.25}
+  - name: sim-variable
+    preset: synthetic
+    model: synthetic-variable
+    synthetic:
+      {ttft_ms: 450, tokens_per_s: 120, jitter: 0.6, error_rate: 0.05, output_tokens: 200, time_scale: 0.25}

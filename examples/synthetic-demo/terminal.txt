@@ -1,0 +1,35 @@
+SYNTHETIC FIXTURE DATA - not the performance of any real API.
+
+synthetic-demo  |  2026-11-17T11:08:42+00:00  |  dataset core@1.0.0  |  15.58 s
+
+short-answer  (max_tokens 32, 3 prompts)
+Provider      Mode    n  Errors  TTFT p50  TTFT p95  TTFC p50  Latency p50  Latency p95  Out tok/s  Decode tok/s  Checks
+------------  ------  -  ------  --------  --------  --------  -----------  -----------  ---------  ------------  ------
+sim-steady    stream  9    0.0%     0.079    0.088*     0.079        0.232       0.246*      142.6         202.5       -
+sim-steady    plain   9    0.0%         -         -         -        0.185       0.207*      189.6             -       -
+sim-variable  stream  9    0.0%     0.125    0.234*     0.125        0.269       0.353*      112.6         206.1       -
+sim-variable  plain   9    0.0%         -         -         -        0.235       0.298*      134.7             -       -
+
+json-generation  (max_tokens 300, 3 prompts)
+Provider      Mode    n  Errors  TTFT p50  TTFT p95  TTFC p50  Latency p50  Latency p95  Out tok/s  Decode tok/s  Checks
+------------  ------  -  ------  --------  --------  --------  -----------  -----------  ---------  ------------  ------
+sim-steady    stream  9    0.0%     0.062    0.078*     0.062        0.687       0.879*      205.4         222.5       -
+sim-steady    plain   9    0.0%         -         -         -        0.593       0.608*      279.9             -       -
+sim-variable  stream  8   11.1%     0.117    0.209*     0.117         1.01        1.42*      206.0         235.3       -
+sim-variable  plain   8   11.1%         -         -         -        0.678       0.972*      348.6             -       -
+
+long-response  (max_tokens 1500, 3 prompts)
+Provider      Mode    n  Errors  TTFT p50  TTFT p95  TTFC p50  Latency p50  Latency p95  Out tok/s  Decode tok/s  Checks
+------------  ------  -  ------  --------  --------  --------  -----------  -----------  ---------  ------------  ------
+sim-steady    stream  9    0.0%     0.063    0.094*     0.063        0.709       0.835*      238.5         266.5       -
+sim-steady    plain   9    0.0%         -         -         -        0.533       0.597*      275.0             -       -
+sim-variable  stream  9    0.0%     0.158    0.205*     0.158         1.10        1.47*      196.2         223.8       -
+sim-variable  plain   8   11.1%         -         -         -        0.470       0.533*      328.1             -       -
+
+Reliability (all requests, warm-up included)
+Provider      Model               Sent  OK  Error rate  Errors       Skipped  Cost
+------------  ------------------  ----  --  ----------  -----------  -------  ----
+sim-steady    synthetic-steady      55  55        0.0%  -                  0     -
+sim-variable  synthetic-variable    55  52        5.5%  http_503 x3        0     -
+
+Times in seconds. TTFT: first streamed text (reasoning or answer). TTFC: first answer text. Latency: request sent to last byte. Out tok/s: completion tokens / latency. Decode tok/s: tokens after the first chunk / time after the first chunk. n: successful samples. * fewer than 20 samples (tail percentiles unstable). ~ token counts estimated from text length.

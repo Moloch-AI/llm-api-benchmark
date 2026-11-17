@@ -1,0 +1,85 @@
+name: Live check (MolochAI)
+
+# A small, bounded run against the real MolochAI API, started by hand only. Without the
+# MOLOCHAI_API_KEY secret it sends one request with an invalid key (costs nothing) and checks
+# that the 401 is reported and the endpoint is stopped. With the secret it sends at most
+# 1 warm-up + 3 short-answer requests (`--max-requests 4`): the plan's per-reply output cap and
+# this request cap bound the cost. Results (no credentials) are attached as an artifact.
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "Model id (empty: the one in benchmarks/molochai.yaml)"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  live:
+    name: Live check (api.molochai.dev)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install .
+      - name: Unauthenticated check (one request, invalid key)
+        env:
+          MOLOCHAI_API_KEY: invalid-key-for-a-401-check
+        run: |
+          llm-bench run --config benchmarks/molochai.yaml --workloads short-answer --repetitions 1 --max-requests 4 --quiet -o unauth
+          python - <<'EOF'
+          import glob, json, sys
+          data = json.load(open(glob.glob("unauth/*.json")[0], encoding="utf-8"))
+          statuses = [(r["status"], r["http_status"]) for r in data["requests"]]
+          print(statuses)
+          if statuses[0] != ("http_error", 401) or any(s != "skipped" for s, _ in statuses[1:]):
+              sys.exit("expected one 401 and the remaining requests skipped")
+          EOF
+      - name: Authenticated run (at most 4 requests)
+        env:
+          MOLOCHAI_API_KEY: ${{ secrets.MOLOCHAI_API_KEY }}
+          # Read by the shell as data, never run as code.
+          MODEL: ${{ inputs.model }}
+        run: |
+          if [ -z "$MOLOCHAI_API_KEY" ]; then
+            echo "::notice title=Live check::The MOLOCHAI_API_KEY secret is not available to this repository; only the unauthenticated check ran."
+            exit 0
+          fi
+          config=benchmarks/molochai.yaml
+          if [ -n "$MODEL" ]; then
+            python - <<'EOF'
+          import os
+          import yaml
+          with open("benchmarks/molochai.yaml", encoding="utf-8") as fh:
+              cfg = yaml.safe_load(fh)
+          cfg["providers"][0]["model"] = os.environ["MODEL"]
+          with open("live.yaml", "w", encoding="utf-8") as fh:
+              yaml.safe_dump(cfg, fh)
+          EOF
+            config=live.yaml
+          fi
+          llm-bench run --config "$config" --workloads short-answer --repetitions 1 --max-requests 4 --formats json,md -o live
+          cat live/*.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: live-results
+          path: |
+            unauth/
+            live/
+          if-no-files-found: ignore

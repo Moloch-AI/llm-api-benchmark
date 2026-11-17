@@ -1,0 +1,31 @@
+A: synthetic-demo (2026-11-17T11:08:42+00:00)
+B: synthetic-demo (2026-11-17T11:08:42+00:00)
+
+Warning: At least one run contains synthetic fixture data.
+
+Workload         Mode    Metric       Endpoint                    n A/B  Median A  Median B  Change  95% CI of B-A     Verdict
+---------------  ------  -----------  --------------------------  -----  --------  --------  ------  ----------------  -------------------
+short-answer     stream  TTFT (s)     sim-steady vs sim-variable    9/9     0.079     0.125   59.5%  [+0.013, +0.154]  B slower
+short-answer     stream  Latency (s)  sim-steady vs sim-variable    9/9     0.232     0.269   16.0%  [-0.011, +0.092]  no clear difference
+short-answer     stream  Out tok/s    sim-steady vs sim-variable    9/9     142.6     112.6  -21.1%  [-60.6, +56.7]    no clear difference
+short-answer     plain   Latency (s)  sim-steady vs sim-variable    9/9     0.185     0.235   26.9%  [-0.047, +0.094]  no clear difference
+short-answer     plain   Out tok/s    sim-steady vs sim-variable    9/9     189.6     134.7  -29.0%  [-87.6, +19.2]    no clear difference
+json-generation  stream  TTFT (s)     sim-steady vs sim-variable    9/8     0.062     0.117   88.0%  [+0.029, +0.117]  B slower
+json-generation  stream  Latency (s)  sim-steady vs sim-variable    9/8     0.687      1.01   47.0%  [-0.151, +0.638]  no clear difference
+json-generation  stream  Out tok/s    sim-steady vs sim-variable    9/8     205.4     206.0    0.3%  [-42.6, +22.7]    no clear difference
+json-generation  plain   Latency (s)  sim-steady vs sim-variable    9/8     0.593     0.678   14.4%  [-0.247, +0.295]  no clear difference
+json-generation  plain   Out tok/s    sim-steady vs sim-variable    9/8     279.9     348.6   24.5%  [+30.4, +142.5]   B higher
+long-response    stream  TTFT (s)     sim-steady vs sim-variable    9/9     0.063     0.158  149.3%  [+0.029, +0.141]  B slower
+long-response    stream  Latency (s)  sim-steady vs sim-variable    9/9     0.709      1.10   55.0%  [+0.125, +0.637]  B slower
+long-response    stream  Out tok/s    sim-steady vs sim-variable    9/9     238.5     196.2  -17.7%  [-84.7, +11.9]    no clear difference
+long-response    plain   Latency (s)  sim-steady vs sim-variable    9/8     0.533     0.470  -11.9%  [-0.174, -0.000]  B faster
+long-response    plain   Out tok/s    sim-steady vs sim-variable    9/8     275.0     328.1   19.3%  [-18.7, +196.1]   no clear difference
+
+Errors (failed/sent)
+Workload         Mode      A    B
+---------------  ------  ---  ---
+json-generation  stream  0/9  1/9
+json-generation  plain   0/9  1/9
+long-response    plain   0/9  1/9
+
+Medians of successful requests; CI from 2000 bootstrap resamples. 'no clear difference' means the interval includes zero.

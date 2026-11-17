@@ -1,0 +1,264 @@
+# Core benchmark dataset. Every prompt here was written for this project and is MIT-licensed.
+# Change the version whenever a prompt, a limit or a check changes: results record the
+# dataset id, version and a SHA-256 of its parsed content, and `llm-bench compare` warns when two
+# runs used different datasets.
+id: core
+version: 1.0.0
+description: >-
+  Eight everyday workloads, three prompts each, from one-word answers to long tutorials. Short
+  workloads mostly measure fixed overhead and time to first token; long ones mostly measure
+  generation speed.
+license: MIT
+workloads:
+  - id: short-answer
+    description: One-word or one-number answers. Dominated by fixed overhead and time to first token.
+    max_tokens: 32
+    prompts:
+      - id: capital
+        prompt: What is the capital city of Australia? Reply with the city name only.
+        checks:
+          - {type: contains, value: Canberra}
+          - {type: max_words, value: 5}
+      - id: symbol
+        prompt: What is the chemical symbol for gold? Reply with the symbol only.
+        checks:
+          - {type: regex, pattern: "\\bAu\\b", ignore_case: false}
+          - {type: max_words, value: 5}
+      - id: leap-year
+        prompt: How many days are in a leap year? Reply with the number only.
+        checks:
+          - {type: last_number, value: 366}
+          - {type: max_words, value: 5}
+
+  - id: basic-text
+    description: A short paragraph of everyday writing.
+    max_tokens: 256
+    prompts:
+      - id: product-description
+        prompt: >-
+          Write a two-sentence product description for a stainless steel water bottle that keeps
+          drinks cold for 24 hours.
+        checks:
+          - {type: max_sentences, value: 4}
+          - {type: contains_any, values: [bottle, cold]}
+      - id: reschedule-email
+        prompt: >-
+          Write a short, polite email to a colleague named Sam asking to move tomorrow's 10:00
+          meeting to Thursday at the same time. Keep it under 80 words.
+        checks:
+          - {type: contains, value: Thursday}
+          - {type: max_words, value: 110}
+      - id: pull-request
+        prompt: >-
+          In one paragraph, explain to a new team member what a pull request is and why teams
+          review code before merging it.
+        checks:
+          - {type: contains_any, values: [review, merge]}
+          - {type: min_words, value: 30}
+
+  - id: code-explain
+    description: Explain a short snippet in prose.
+    max_tokens: 400
+    prompts:
+      - id: python-dict
+        prompt: |-
+          Explain what this Python function does and what it returns for ["a", "b", "a"]:
+
+          ```python
+          def tally(items):
+              counts = {}
+              for item in items:
+                  counts[item] = counts.get(item, 0) + 1
+              return counts
+          ```
+        checks:
+          - {type: contains_any, values: [count, tally, occurrence, frequency]}
+          - {type: min_words, value: 25}
+      - id: sql-join
+        prompt: |-
+          Explain in plain language what this SQL query returns:
+
+          ```sql
+          SELECT c.name, COUNT(o.id) AS orders
+          FROM customers c
+          LEFT JOIN orders o ON o.customer_id = c.id
+          GROUP BY c.name
+          ORDER BY orders DESC;
+          ```
+        checks:
+          - {type: contains_any, values: [customer, customers]}
+          - {type: contains_any, values: [left join, zero, "0", no orders]}
+      - id: js-debounce
+        prompt: |-
+          Explain what this JavaScript function is for and when you would use it:
+
+          ```javascript
+          function debounce(fn, ms) {
+            let t;
+            return (...args) => {
+              clearTimeout(t);
+              t = setTimeout(() => fn(...args), ms);
+            };
+          }
+          ```
+        checks:
+          - {type: contains_any, values: [delay, wait, timer, timeout]}
+          - {type: min_words, value: 25}
+
+  - id: code-generation
+    description: Write a small, self-contained function.
+    max_tokens: 600
+    prompts:
+      - id: palindrome
+        prompt: >-
+          Write a Python function is_palindrome(text: str) -> bool that ignores case, spaces and
+          punctuation. Return only the code in one Python code block.
+        checks:
+          - {type: python_syntax, defines: is_palindrome}
+      - id: duration
+        prompt: >-
+          Write a Python function parse_duration(value: str) -> int that converts strings like
+          "1h30m", "45s" or "2h5m10s" into a number of seconds and raises ValueError on invalid
+          input. Return only the code in one Python code block.
+        checks:
+          - {type: python_syntax, defines: parse_duration}
+      - id: merge-intervals
+        prompt: >-
+          Write a Python function merge_intervals(intervals: list[tuple[int, int]]) ->
+          list[tuple[int, int]] that merges overlapping intervals and returns them sorted.
+          Return only the code in one Python code block.
+        checks:
+          - {type: python_syntax, defines: merge_intervals}
+
+  - id: json-generation
+    description: Produce JSON from instructions (no provider JSON mode is used).
+    max_tokens: 300
+    prompts:
+      - id: extract-contact
+        prompt: >-
+          Extract the details from this text into a JSON object with exactly the keys name,
+          company, email and city. Reply with the JSON only. Text: "Hi, I'm Dana Reyes from
+          Northwind Labs in Lisbon. You can reach me at dana.reyes@example.com."
+        checks:
+          - {type: json_keys, keys: [name, company, email, city]}
+          - {type: contains, value: Lisbon}
+      - id: task-list
+        prompt: >-
+          Return a JSON array of three objects for a moving-house checklist. Each object has the
+          keys title (string), due_in_days (integer) and done (boolean). Reply with the JSON only.
+        checks:
+          - {type: json_valid, kind: array}
+      - id: config-object
+        prompt: >-
+          Return a JSON object describing a web server configuration with the keys host (string),
+          port (integer), tls (boolean) and allowed_origins (array of strings). Reply with the JSON
+          only.
+        checks:
+          - {type: json_keys, keys: [host, port, tls, allowed_origins]}
+
+  - id: summarization
+    description: Summarize a passage of about 200 words.
+    max_tokens: 200
+    prompts:
+      - id: library-hours
+        prompt: |-
+          Summarize the following notice in at most two sentences.
+
+          The Riverside Public Library will change its opening hours from the first of next
+          month. On weekdays the library will open at 9:00 instead of 10:00 and close at 20:00
+          instead of 18:00, so that people who work during the day can visit in the evening. On
+          Saturdays the hours stay the same, from 10:00 to 16:00, and the library will remain
+          closed on Sundays. The children's reading room will keep its current schedule because
+          the staff who run the story sessions work part time. The change follows a survey last
+          spring in which more than half of the members who answered said they could not reach
+          the library before it closed. To pay for the longer hours, the library will reduce the
+          number of printed newspapers it subscribes to and offer digital access instead, which
+          members can use from home with their library card. The self-service return box outside
+          the main entrance stays open at all hours.
+        checks:
+          - {type: max_sentences, value: 3}
+          - {type: contains_any, values: ["20:00", "8 pm", "8pm", evening, later]}
+      - id: outage-report
+        prompt: |-
+          Summarize this incident report in at most three sentences for a non-technical reader.
+
+          On Tuesday between 14:05 and 14:47 UTC, about a third of requests to the checkout
+          service failed with an error. The cause was a configuration change that lowered the
+          maximum number of database connections the service could open. Under normal afternoon
+          traffic the service ran out of connections, and new requests waited until they timed
+          out. The on-call engineer noticed the rise in errors from an alert at 14:09, but the
+          configuration change was not identified as the cause until 14:38 because it had been
+          deployed together with an unrelated feature. Rolling back the configuration restored
+          normal behavior within nine minutes. No orders were lost: customers whose checkout
+          failed saw an error and could retry. The team will now deploy configuration changes
+          separately from code, add an alert on connection pool usage, and test connection limits
+          under realistic load before changing them.
+        checks:
+          - {type: max_sentences, value: 4}
+          - {type: contains_any, values: [configuration, config, setting]}
+      - id: urban-trees
+        prompt: |-
+          Summarize the following paragraph in one sentence.
+
+          Streets with many trees are usually cooler on summer afternoons than streets without
+          them. Leaves block sunlight before it reaches the pavement, and trees release water
+          vapor, which takes heat from the surrounding air. The effect is strongest directly
+          under the canopy, where surface temperatures of asphalt can be far lower than in full
+          sun, and it is weaker a few streets away. Cities that plant trees to reduce heat also
+          need to plan for water during dry periods, for roots that can lift sidewalks, and for
+          the decades it takes a young tree to grow a large canopy. Choosing species that suit
+          the local climate, and planting them where people walk and wait, gives the largest
+          benefit for the money spent.
+        checks:
+          - {type: max_sentences, value: 2}
+          - {type: contains_any, values: [tree, trees]}
+
+  - id: reasoning
+    description: A short word problem with a single numeric answer.
+    max_tokens: 400
+    prompts:
+      - id: train-time
+        prompt: >-
+          A train leaves at 14:10 and arrives at 16:45 on the same day. How many minutes does the
+          trip take? Explain briefly, then give the final number alone on the last line.
+        checks:
+          - {type: last_number, value: 155}
+      - id: pen-price
+        prompt: >-
+          A shop sells pens at 3 for 2 dollars. How many dollars do 18 pens cost? Explain
+          briefly, then give the final number alone on the last line.
+        checks:
+          - {type: last_number, value: 12}
+      - id: machines
+        prompt: >-
+          If 5 machines make 5 widgets in 5 minutes, how many minutes do 100 machines need to make
+          100 widgets? Explain briefly, then give the final number alone on the last line.
+        checks:
+          - {type: last_number, value: 5}
+
+  - id: long-response
+    description: A long structured reply. Dominated by generation speed.
+    max_tokens: 1500
+    prompts:
+      - id: git-branching
+        prompt: >-
+          Write a tutorial of about 700 words on using Git branches for a small team: creating a
+          branch, committing, keeping it up to date with main, opening a pull request and
+          cleaning up afterwards. Use headings and include the commands.
+        checks:
+          - {type: min_words, value: 350}
+          - {type: contains, value: git}
+      - id: error-messages
+        prompt: >-
+          Write a guide of about 700 words on writing good error messages in software: what they
+          should contain, tone, examples of bad and improved messages, and how to handle errors
+          that the user cannot fix. Use headings.
+        checks:
+          - {type: min_words, value: 350}
+      - id: http-caching
+        prompt: >-
+          Explain HTTP caching in about 700 words for a web developer: Cache-Control, ETag and
+          Last-Modified, validation requests, what a CDN adds, and common mistakes. Use headings.
+        checks:
+          - {type: min_words, value: 350}
+          - {type: contains, value: Cache-Control}

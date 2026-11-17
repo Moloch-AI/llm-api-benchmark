@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="360" viewBox="0 0 1280 360" role="img" aria-labelledby="t d">
+  <title id="t">llm-api-benchmark</title>
+  <desc id="d">Bounded, reproducible benchmarks for OpenAI-compatible LLM APIs: time to first token, latency, tokens per second, errors and cost.</desc>
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#26232B" stroke-width="1"/>
+    </pattern>
+    <linearGradient id="fade" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#100E12" stop-opacity="1"/>
+      <stop offset=".55" stop-color="#100E12" stop-opacity=".92"/>
+      <stop offset="1" stop-color="#100E12" stop-opacity=".2"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="360" fill="#100E12"/>
+  <rect width="1280" height="360" fill="url(#grid)"/>
+  <rect width="1280" height="360" fill="url(#fade)"/>
+
+  <!-- Range chart motif: whisker min..max, bar p25..p75, ring-marked median, p95 tick. -->
+  <g transform="translate(800 92)" stroke-linecap="round">
+    <line x1="0" x2="380" y1="0" y2="0" stroke="#3A3640" stroke-width="1"/>
+    <line x1="0" x2="380" y1="176" y2="176" stroke="#3A3640" stroke-width="1"/>
+    <g>
+      <line x1="40" x2="236" y1="34" y2="34" stroke="#9085e9" stroke-width="2" opacity=".55"/>
+      <rect x="78" y="27" width="70" height="14" rx="5" fill="#9085e9"/>
+      <line x1="196" x2="196" y1="23" y2="45" stroke="#9085e9" stroke-width="3"/>
+      <circle cx="108" cy="34" r="8" fill="#9085e9" stroke="#100E12" stroke-width="3"/>
+    </g>
+    <g>
+      <line x1="66" x2="330" y1="88" y2="88" stroke="#d95926" stroke-width="2" opacity=".55"/>
+      <rect x="120" y="81" width="118" height="14" rx="5" fill="#d95926"/>
+      <line x1="298" x2="298" y1="77" y2="99" stroke="#d95926" stroke-width="3"/>
+      <circle cx="166" cy="88" r="8" fill="#d95926" stroke="#100E12" stroke-width="3"/>
+    </g>
+    <g>
+      <line x1="28" x2="190" y1="142" y2="142" stroke="#199e70" stroke-width="2" opacity=".55"/>
+      <rect x="52" y="135" width="52" height="14" rx="5" fill="#199e70"/>
+      <line x1="160" x2="160" y1="131" y2="153" stroke="#199e70" stroke-width="3"/>
+      <circle cx="74" cy="142" r="8" fill="#199e70" stroke="#100E12" stroke-width="3"/>
+    </g>
+  </g>
+
+  <g font-family="'Instrument Sans','Segoe UI',Helvetica,Arial,sans-serif">
+    <text x="72" y="132" fill="#F5F6F8" font-size="58" font-weight="700" letter-spacing="-1">llm-api-benchmark</text>
+    <text x="74" y="184" fill="#C9C5CE" font-size="25">Compare latency, throughput, reliability and cost</text>
+    <text x="74" y="218" fill="#C9C5CE" font-size="25">of OpenAI-compatible LLM APIs, from the client side.</text>
+  </g>
+  <g font-family="'JetBrains Mono',Consolas,'SFMono-Regular',monospace" font-size="17" fill="#A5A0AB">
+    <text x="74" y="282">TTFT · latency p50/p90/p95 · tokens/s · error rate · USD budget</text>
+  </g>
+  <rect x="74" y="300" width="56" height="4" rx="2" fill="#FF6A3D"/>
+</svg>

@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint and type-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install -e ".[dev]"
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: mypy
+
+  test:
+    name: Test (Python ${{ matrix.python-version }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+        include:
+          - os: windows-latest
+            python-version: "3.13"
+          - os: macos-latest
+            python-version: "3.13"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install -e ".[dev]"
+      - run: pytest --cov --cov-report=term-missing
+
+  integration:
+    name: Integration (MolochAI mock server)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Check out the mock server
+        uses: actions/checkout@v7
+        with:
+          repository: Moloch-AI/uncensored-ai-api
+          # Pinned: the first commit whose mock sends X-Should-Retry like the gateway does.
+          ref: 33243178475e735a0b6ac957283ec4eacc268a6d
+          path: uncensored-ai-api
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install -e ".[dev]"
+      - name: Start the mock server
+        run: |
+          nohup node uncensored-ai-api/mock-server/server.mjs --port 4010 --quiet --rate-limit 600 > mock.log 2>&1 &
+          for _ in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:4010/health; then exit 0; fi
+            sleep 1
+          done
+          echo "The mock server did not start:" >&2
+          cat mock.log >&2
+          exit 1
+      - name: Integration tests
+        env:
+          MOLOCHAI_MOCK_BASE_URL: http://127.0.0.1:4010/api/v1
+        run: pytest tests/integration -v -rs
+      - name: The molochai example config, end to end
+        env:
+          MOLOCHAI_BASE_URL: http://127.0.0.1:4010/api/v1
+          MOLOCHAI_API_KEY: mock-key
+        run: |
+          llm-bench run --config benchmarks/molochai.yaml --dry-run
+          llm-bench run --config benchmarks/molochai.yaml --repetitions 1 --formats json,csv,md,html -o out
+          llm-bench report out/*.json --format markdown > /dev/null
+
+  build:
+    name: Build and check the package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - run: python -m pip install build twine packaging
+      - run: python -m build
+      - run: twine check --strict dist/*
+      - run: python .github/scripts/check_dist.py dist
+      - name: Install the wheel in a fresh environment and run the offline demo
+        run: |
+          python -m venv "$RUNNER_TEMP/smoke"
+          "$RUNNER_TEMP/smoke/bin/python" -m pip install dist/*.whl
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/smoke/bin/llm-bench" --version
+          "$RUNNER_TEMP/smoke/bin/llm-bench" providers > /dev/null
+          "$RUNNER_TEMP/smoke/bin/llm-bench" init synthetic-demo
+          "$RUNNER_TEMP/smoke/bin/llm-bench" run --config synthetic-demo.yaml --yes --quiet --workloads short-answer --repetitions 1 --formats json,md,html
