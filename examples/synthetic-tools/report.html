@@ -1,0 +1,162 @@
+<!doctype html><html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>synthetic-tools benchmark</title><style>
+:root{color-scheme:light;--bg:#F6F5F2;--surface:#FFFFFF;--fg:#0E1116;--fg2:#47505E;--muted:#6B7280;
+--line:#E3E1DC;--grid:#ECEAE5;--accent:#C8431A;--warn-bg:#FFF4E5;--warn-fg:#7A3E00;
+--s1:#584CC4;--s2:#C8431A;--s3:#1baf7a;--s4:#eda100;--s0:#8A8F98}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#100E12;
+--surface:#19171C;--fg:#F5F6F8;--fg2:#C9C5CE;--muted:#A5A0AB;--line:#2E2A33;--grid:#26232B;
+--accent:#FF6A3D;--warn-bg:#2B1D12;--warn-fg:#FFC38A;--s1:#9085e9;--s2:#d95926;--s3:#199e70;
+--s4:#c98500;--s0:#7D7884}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#100E12;--surface:#19171C;--fg:#F5F6F8;--fg2:#C9C5CE;
+--muted:#A5A0AB;--line:#2E2A33;--grid:#26232B;--accent:#FF6A3D;--warn-bg:#2B1D12;--warn-fg:#FFC38A;
+--s1:#9085e9;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s0:#7D7884}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 "Instrument Sans",system-ui,-apple-system,
+"Segoe UI",sans-serif}
+main{max-width:1180px;margin:0 auto;padding:32px 16px 64px}
+h1{font-size:26px;margin:0 0 4px;letter-spacing:-.01em}h2{font-size:19px;margin:40px 0 12px}
+h3{font-size:16px;margin:28px 0 8px}
+p,li{color:var(--fg2)}code,.mono{font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:13px}
+.sub{color:var(--muted);margin:0 0 20px}
+.banner{border:1px solid var(--accent);background:var(--warn-bg);color:var(--warn-fg);padding:12px 16px;
+border-radius:6px;margin:16px 0;font-weight:600}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;margin:12px 0}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{color:var(--muted);font-weight:600}td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:12px;align-items:start}
+.chart h4{margin:0 0 6px;font-size:13px;color:var(--fg2);font-weight:600}
+svg{display:block;width:100%;height:auto}
+svg text{fill:var(--fg2);font-size:13px;font-family:inherit}
+svg .axis text{fill:var(--muted)}svg .gridline{stroke:var(--grid);stroke-width:1}
+svg .hit{fill:transparent}svg .row:hover .hit{fill:var(--grid)}
+.legend{color:var(--muted);font-size:12px;margin:8px 0 0}
+#tip{position:fixed;pointer-events:none;background:var(--surface);color:var(--fg);border:1px solid var(--line);
+border-radius:6px;padding:8px 10px;font-size:12px;line-height:1.45;box-shadow:0 6px 24px rgb(0 0 0/.18);
+display:none;z-index:10;white-space:pre}
+footer{margin-top:48px;color:var(--muted);font-size:13px}a{color:var(--accent)}
+</style></head><body><main>
+<h1>LLM API benchmark: synthetic-tools</h1>
+<p class="sub">2026-11-18T10:55:39+00:00 UTC · dataset tools 1.0.0 · llm-api-benchmark 0.1.0</p>
+<div class="banner">Synthetic fixture data. At least one endpoint in this run is the in-process simulator; these numbers are not the performance of any real API.</div>
+<h2>Run</h2>
+<div class="card scroll"><table><tr><th>Started / finished (UTC)</th><td>2026-11-18T10:55:39+00:00 / 2026-11-18T10:55:44+00:00</td></tr><tr><th>Duration</th><td>5.49 s</td></tr><tr><th>Dataset</th><td>tools 1.0.0, sha256 99ffbec476b4211c39aa6ac63255254275707f36a728a50204133e2e93518b0c</td></tr><tr><th>Modes</th><td>stream</td></tr><tr><th>Repetitions per prompt</th><td>3</td></tr><tr><th>Warm-up per endpoint</th><td>1 (excluded from statistics)</td></tr><tr><th>Concurrency</th><td>4</td></tr><tr><th>Timeout</th><td>120.0 s (connect 10.0 s)</td></tr><tr><th>Temperature</th><td>provider default (not sent)</td></tr><tr><th>Client</th><td>Python 3.12.4, httpx 0.28.1, Windows-10</td></tr></table></div>
+<h2>Endpoints</h2>
+<div class="card scroll"><table><tr><th>Name</th><th>Base URL</th><th>Model requested</th><th>Model reported</th><th>Pricing</th></tr><tr><td>sim-steady</td><td class=mono>synthetic://local</td><td class=mono>synthetic-steady</td><td class=mono>synthetic-steady</td><td>not provided</td></tr><tr><td>sim-variable</td><td class=mono>synthetic://local</td><td class=mono>synthetic-variable</td><td class=mono>synthetic-variable</td><td>not provided</td></tr></table></div>
+<h2>Results by workload</h2>
+<p class="legend">Times in seconds. TTFT: first streamed output (reasoning, answer or tool call). TTFC: first answer output (text or tool call). Latency: request sent to last byte. Out tok/s: completion tokens / latency. Decode tok/s: tokens after the first chunk / time after the first chunk. n: successful samples. * fewer than 20 samples (tail percentiles unstable). ~ token counts estimated from text length. Charts: whisker min to max, bar P25 to P75, dot median, tick P95. Hover or focus a row for its numbers.</p>
+<h3>tool-select</h3><p class=sub>Pick the right function among four, or answer directly when no tool fits. max_tokens 1024, 3 prompts.</p>
+<div class="charts"><div class="chart card"><h4>Time to first token, seconds (tool-select)</h4><svg viewBox="0 0 520 94" role="img" aria-label="Time to first token, seconds (tool-select)"><g class="axis"><line class="gridline" x1="168.0" x2="168.0" y1="8" y2="68"/><text x="168.0" y="86" text-anchor="middle">0</text><line class="gridline" x1="301.6" x2="301.6" y1="8" y2="68"/><text x="301.6" y="86" text-anchor="middle">0.1</text><line class="gridline" x1="435.2" x2="435.2" y1="8" y2="68"/><text x="435.2" y="86" text-anchor="middle">0.2</text></g><g class="row" tabindex="0" data-tip="sim-steady · stream
+n 9
+min 0.060  p25 0.062
+median 0.076  p75 0.090
+p90 0.096  p95 0.102
+max 0.108 s"><rect class="hit" x="0" y="8.0" width="520" height="30"/><text x="158" y="27.0" text-anchor="end">sim-steady · stream</text><line x1="247.6" x2="312.6" y1="23.0" y2="23.0" stroke="var(--s1)" stroke-width="2" stroke-linecap="round" opacity=".55"/><rect x="251.4" y="18.0" width="36.6" height="10" rx="4" fill="var(--s1)"/><line x1="304.2" x2="304.2" y1="15.0" y2="31.0" stroke="var(--s1)" stroke-width="2" stroke-linecap="round"/><circle cx="269.8" cy="23.0" r="5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2"/></g><g class="row" tabindex="0" data-tip="sim-variable · stream
+n 9
+min 0.093  p25 0.122
+median 0.139  p75 0.186
+p90 0.201  p95 0.214
+max 0.228 s"><rect class="hit" x="0" y="38.0" width="520" height="30"/><text x="158" y="57.0" text-anchor="end">sim-variable · stream</text><line x1="292.9" x2="472.0" y1="53.0" y2="53.0" stroke="var(--s2)" stroke-width="2" stroke-linecap="round" opacity=".55"/><rect x="331.4" y="48.0" width="84.7" height="10" rx="4" fill="var(--s2)"/><line x1="454.4" x2="454.4" y1="45.0" y2="61.0" stroke="var(--s2)" stroke-width="2" stroke-linecap="round"/><circle cx="353.1" cy="53.0" r="5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2"/></g></svg></div><div class="chart card"><h4>End-to-end latency, seconds (tool-select)</h4><svg viewBox="0 0 520 94" role="img" aria-label="End-to-end latency, seconds (tool-select)"><g class="axis"><line class="gridline" x1="168.0" x2="168.0" y1="8" y2="68"/><text x="168.0" y="86" text-anchor="middle">0</text><line class="gridline" x1="251.5" x2="251.5" y1="8" y2="68"/><text x="251.5" y="86" text-anchor="middle">0.25</text><line class="gridline" x1="335.0" x2="335.0" y1="8" y2="68"/><text x="335.0" y="86" text-anchor="middle">0.5</text><line class="gridline" x1="418.5" x2="418.5" y1="8" y2="68"/><text x="418.5" y="86" text-anchor="middle">0.75</text><line class="gridline" x1="502.0" x2="502.0" y1="8" y2="68"/><text x="502.0" y="86" text-anchor="middle">1</text></g><g class="row" tabindex="0" data-tip="sim-steady · stream
+n 9
+min 0.092  p25 0.121
+median 0.139  p75 0.143
+p90 0.154  p95 0.154
+max 0.154 s"><rect class="hit" x="0" y="8.0" width="520" height="30"/><text x="158" y="27.0" text-anchor="end">sim-steady · stream</text><line x1="198.8" x2="219.6" y1="23.0" y2="23.0" stroke="var(--s1)" stroke-width="2" stroke-linecap="round" opacity=".55"/><rect x="208.4" y="18.0" width="7.3" height="10" rx="4" fill="var(--s1)"/><line x1="219.5" x2="219.5" y1="15.0" y2="31.0" stroke="var(--s1)" stroke-width="2" stroke-linecap="round"/><circle cx="214.4" cy="23.0" r="5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2"/></g><g class="row" tabindex="0" data-tip="sim-variable · stream
+n 9
+min 0.139  p25 0.156
+median 0.186  p75 0.211
+p90 0.393  p95 0.632
+max 0.872 s"><rect class="hit" x="0" y="38.0" width="520" height="30"/><text x="158" y="57.0" text-anchor="end">sim-variable · stream</text><line x1="214.5" x2="459.1" y1="53.0" y2="53.0" stroke="var(--s2)" stroke-width="2" stroke-linecap="round" opacity=".55"/><rect x="220.1" y="48.0" width="18.4" height="10" rx="4" fill="var(--s2)"/><line x1="379.2" x2="379.2" y1="45.0" y2="61.0" stroke="var(--s2)" stroke-width="2" stroke-linecap="round"/><circle cx="230.1" cy="53.0" r="5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2"/></g></svg></div></div>
+<div class="card scroll"><table><tr><th>Provider</th><th>Mode</th><th class=n>n</th><th class=n>Errors</th><th class=n>TTFT p50</th><th class=n>TTFT p95</th><th class=n>TTFC p50</th><th class=n>Latency min</th><th class=n>p50</th><th class=n>p90</th><th class=n>p95</th><th class=n>max</th><th class=n>Out tok/s</th><th class=n>Decode tok/s</th><th class=n>Tokens p50</th><th class=n>Checks</th></tr><tr><td>sim-steady</td><td>stream</td><td class=n>9</td><td class=n title="no errors">0.0%</td><td class=n>0.076</td><td class=n>0.102*</td><td class=n>0.076</td><td class=n>0.092</td><td class=n>0.139</td><td class=n>0.154*</td><td class=n>0.154*</td><td class=n>0.154</td><td class=n>115.6</td><td class=n>278.7</td><td class=n>12.0</td><td class=n>0/9</td></tr><tr><td>sim-variable</td><td>stream</td><td class=n>9</td><td class=n title="no errors">0.0%</td><td class=n>0.139</td><td class=n>0.214*</td><td class=n>0.139</td><td class=n>0.139</td><td class=n>0.186</td><td class=n>0.393*</td><td class=n>0.632*</td><td class=n>0.872</td><td class=n>76.9</td><td class=n>410.9</td><td class=n>12.0</td><td class=n>0/9</td></tr></table></div>
+<div class="card scroll"><table><tr><th>Provider</th><th>Mode</th><th class=n>n</th><th class=n>Called a tool</th><th class=n>Same calls</th><th class=n>contains</th><th class=n>no_tool_call</th><th class=n>tool_args_valid</th><th class=n>tool_call</th><th class=n>tool_call_count</th></tr><tr><td>sim-steady</td><td>stream</td><td class=n>9</td><td class=n>100.0%</td><td class=n>89% (3 prompts)</td><td class=n>0/3</td><td class=n>0/3</td><td class=n>3/6</td><td class=n>0/6</td><td class=n>6/6</td></tr><tr><td>sim-variable</td><td>stream</td><td class=n>9</td><td class=n>88.9%</td><td class=n>67% (3 prompts)</td><td class=n>0/3</td><td class=n>1/3</td><td class=n>4/6</td><td class=n>0/6</td><td class=n>6/6</td></tr></table></div>
+<h3>tool-args</h3><p class=sub>Fill typed and structured arguments exactly: dates, times, integers in a range, enums and lists. max_tokens 1024, 3 prompts.</p>
+<div class="charts"><div class="chart card"><h4>Time to first token, seconds (tool-args)</h4><svg viewBox="0 0 520 94" role="img" aria-label="Time to first token, seconds (tool-args)"><g class="axis"><line class="gridline" x1="168.0" x2="168.0" y1="8" y2="68"/><text x="168.0" y="86" text-anchor="middle">0</text><line class="gridline" x1="301.6" x2="301.6" y1="8" y2="68"/><text x="301.6" y="86" text-anchor="middle">0.1</text><line class="gridline" x1="435.2" x2="435.2" y1="8" y2="68"/><text x="435.2" y="86" text-anchor="middle">0.2</text></g><g class="row" tabindex="0" data-tip="sim-steady · stream
+n 9
+min 0.059  p25 0.061
+median 0.076  p75 0.091
+p90 0.091  p95 0.091
+max 0.091 s"><rect class="hit" x="0" y="8.0" width="520" height="30"/><text x="158" y="27.0" text-anchor="end">sim-steady · stream</text><line x1="246.3" x2="290.2" y1="23.0" y2="23.0" stroke="var(--s1)" stroke-width="2" stroke-linecap="round" opacity=".55"/><rect x="249.6" y="18.0" width="39.7" height="10" rx="4" fill="var(--s1)"/><line x1="289.9" x2="289.9" y1="15.0" y2="31.0" stroke="var(--s1)" stroke-width="2" stroke-linecap="round"/><circle cx="269.0" cy="23.0" r="5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2"/></g><g class="row" tabindex="0" data-tip="sim-variable · stream
+n 9
+min 0.043  p25 0.075
+median 0.093  p75 0.139
+p90 0.177  p95 0.196
+max 0.216 s"><rect class="hit" x="0" y="38.0" width="520" height="30"/><text x="158" y="57.0" text-anchor="end">sim-variable · stream</text><line x1="225.3" x2="456.3" y1="53.0" y2="53.0" stroke="var(--s2)" stroke-width="2" stroke-linecap="round" opacity=".55"/><rect x="267.5" y="48.0" width="86.5" height="10" rx="4" fill="var(--s2)"/><line x1="430.3" x2="430.3" y1="45.0" y2="61.0" stroke="var(--s2)" stroke-width="2" stroke-linecap="round"/><circle cx="292.5" cy="53.0" r="5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2"/></g></svg></div><div class="chart card"><h4>End-to-end latency, seconds (tool-args)</h4><svg viewBox="0 0 520 94" role="img" aria-label="End-to-end latency, seconds (tool-args)"><g class="axis"><line class="gridline" x1="168.0" x2="168.0" y1="8" y2="68"/><text x="168.0" y="86" text-anchor="middle">0</text><line class="gridline" x1="251.5" x2="251.5" y1="8" y2="68"/><text x="251.5" y="86" text-anchor="middle">0.25</text><line class="gridline" x1="335.0" x2="335.0" y1="8" y2="68"/><text x="335.0" y="86" text-anchor="middle">0.5</text><line class="gridline" x1="418.5" x2="418.5" y1="8" y2="68"/><text x="418.5" y="86" text-anchor="middle">0.75</text><line class="gridline" x1="502.0" x2="502.0" y1="8" y2="68"/><text x="502.0" y="86" text-anchor="middle">1</text></g><g class="row" tabindex="0" data-tip="sim-steady · stream
+n 9
+min 0.081  p25 0.105
+median 0.137  p75 0.151
+p90 0.414  p95 0.470
+max 0.526 s"><rect class="hit" x="0" y="8.0" width="520" height="30"/><text x="158" y="27.0" text-anchor="end">sim-steady · stream</text><line x1="195.1" x2="343.6" y1="23.0" y2="23.0" stroke="var(--s1)" stroke-width="2" stroke-linecap="round" opacity=".55"/><rect x="203.1" y="18.0" width="15.5" height="10" rx="4" fill="var(--s1)"/><line x1="325.0" x2="325.0" y1="15.0" y2="31.0" stroke="var(--s1)" stroke-width="2" stroke-linecap="round"/><circle cx="213.6" cy="23.0" r="5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2"/></g><g class="row" tabindex="0" data-tip="sim-variable · stream
+n 9
+min 0.104  p25 0.139
+median 0.155  p75 0.275
+p90 0.727  p95 0.850
+max 0.973 s"><rect class="hit" x="0" y="38.0" width="520" height="30"/><text x="158" y="57.0" text-anchor="end">sim-variable · stream</text><line x1="202.9" x2="492.9" y1="53.0" y2="53.0" stroke="var(--s2)" stroke-width="2" stroke-linecap="round" opacity=".55"/><rect x="214.3" y="48.0" width="45.5" height="10" rx="4" fill="var(--s2)"/><line x1="451.9" x2="451.9" y1="45.0" y2="61.0" stroke="var(--s2)" stroke-width="2" stroke-linecap="round"/><circle cx="219.8" cy="53.0" r="5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2"/></g></svg></div></div>
+<div class="card scroll"><table><tr><th>Provider</th><th>Mode</th><th class=n>n</th><th class=n>Errors</th><th class=n>TTFT p50</th><th class=n>TTFT p95</th><th class=n>TTFC p50</th><th class=n>Latency min</th><th class=n>p50</th><th class=n>p90</th><th class=n>p95</th><th class=n>max</th><th class=n>Out tok/s</th><th class=n>Decode tok/s</th><th class=n>Tokens p50</th><th class=n>Checks</th></tr><tr><td>sim-steady</td><td>stream</td><td class=n>9</td><td class=n title="no errors">0.0%</td><td class=n>0.076</td><td class=n>0.091*</td><td class=n>0.076</td><td class=n>0.081</td><td class=n>0.137</td><td class=n>0.414*</td><td class=n>0.470*</td><td class=n>0.526</td><td class=n>179.6</td><td class=n>366.8</td><td class=n>25.0</td><td class=n>0/9</td></tr><tr><td>sim-variable</td><td>stream</td><td class=n>9</td><td class=n title="no errors">0.0%</td><td class=n>0.093</td><td class=n>0.196*</td><td class=n>0.093</td><td class=n>0.104</td><td class=n>0.155</td><td class=n>0.727*</td><td class=n>0.850*</td><td class=n>0.973</td><td class=n>108.3</td><td class=n>292.9</td><td class=n>15.0</td><td class=n>0/9</td></tr></table></div>
+<div class="card scroll"><table><tr><th>Provider</th><th>Mode</th><th class=n>n</th><th class=n>Called a tool</th><th class=n>Same calls</th><th class=n>tool_args_valid</th><th class=n>tool_call</th></tr><tr><td>sim-steady</td><td>stream</td><td class=n>9</td><td class=n>77.8%</td><td class=n>44% (3 prompts)</td><td class=n>4/9</td><td class=n>0/9</td></tr><tr><td>sim-variable</td><td>stream</td><td class=n>9</td><td class=n>77.8%</td><td class=n>56% (3 prompts)</td><td class=n>5/9</td><td class=n>0/9</td></tr></table></div>
+<h3>tool-parallel</h3><p class=sub>Requests that need several calls. Counts calls made in one reply; an endpoint that only returns one call per reply fails these checks even if it would make the rest in later turns. max_tokens 1024, 3 prompts.</p>
+<div class="charts"><div class="chart card"><h4>Time to first token, seconds (tool-parallel)</h4><svg viewBox="0 0 520 94" role="img" aria-label="Time to first token, seconds (tool-parallel)"><g class="axis"><line class="gridline" x1="168.0" x2="168.0" y1="8" y2="68"/><text x="168.0" y="86" text-anchor="middle">0</text><line class="gridline" x1="301.6" x2="301.6" y1="8" y2="68"/><text x="301.6" y="86" text-anchor="middle">0.1</text><line class="gridline" x1="435.2" x2="435.2" y1="8" y2="68"/><text x="435.2" y="86" text-anchor="middle">0.2</text></g><g class="row" tabindex="0" data-tip="sim-steady · stream
+n 9
+min 0.062  p25 0.076
+median 0.077  p75 0.091
+p90 0.092  p95 0.092
+max 0.093 s"><rect class="hit" x="0" y="8.0" width="520" height="30"/><text x="158" y="27.0" text-anchor="end">sim-steady · stream</text><line x1="250.3" x2="292.2" y1="23.0" y2="23.0" stroke="var(--s1)" stroke-width="2" stroke-linecap="round" opacity=".55"/><rect x="269.7" y="18.0" width="20.4" height="10" rx="4" fill="var(--s1)"/><line x1="291.5" x2="291.5" y1="15.0" y2="31.0" stroke="var(--s1)" stroke-width="2" stroke-linecap="round"/><circle cx="270.8" cy="23.0" r="5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2"/></g><g class="row" tabindex="0" data-tip="sim-variable · stream
+n 9
+min 0.046  p25 0.091
+median 0.137  p75 0.165
+p90 0.220  p95 0.224
+max 0.229 s"><rect class="hit" x="0" y="38.0" width="520" height="30"/><text x="158" y="57.0" text-anchor="end">sim-variable · stream</text><line x1="230.0" x2="473.3" y1="53.0" y2="53.0" stroke="var(--s2)" stroke-width="2" stroke-linecap="round" opacity=".55"/><rect x="290.2" y="48.0" width="98.2" height="10" rx="4" fill="var(--s2)"/><line x1="467.4" x2="467.4" y1="45.0" y2="61.0" stroke="var(--s2)" stroke-width="2" stroke-linecap="round"/><circle cx="351.6" cy="53.0" r="5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2"/></g></svg></div><div class="chart card"><h4>End-to-end latency, seconds (tool-parallel)</h4><svg viewBox="0 0 520 94" role="img" aria-label="End-to-end latency, seconds (tool-parallel)"><g class="axis"><line class="gridline" x1="168.0" x2="168.0" y1="8" y2="68"/><text x="168.0" y="86" text-anchor="middle">0</text><line class="gridline" x1="279.3" x2="279.3" y1="8" y2="68"/><text x="279.3" y="86" text-anchor="middle">0.5</text><line class="gridline" x1="390.7" x2="390.7" y1="8" y2="68"/><text x="390.7" y="86" text-anchor="middle">1</text><line class="gridline" x1="502.0" x2="502.0" y1="8" y2="68"/><text x="502.0" y="86" text-anchor="middle">1.5</text></g><g class="row" tabindex="0" data-tip="sim-steady · stream
+n 9
+min 0.064  p25 0.108
+median 0.125  p75 0.155
+p90 0.288  p95 0.492
+max 0.697 s"><rect class="hit" x="0" y="8.0" width="520" height="30"/><text x="158" y="27.0" text-anchor="end">sim-steady · stream</text><line x1="182.2" x2="323.1" y1="23.0" y2="23.0" stroke="var(--s1)" stroke-width="2" stroke-linecap="round" opacity=".55"/><rect x="192.0" y="18.0" width="10.5" height="10" rx="4" fill="var(--s1)"/><line x1="277.7" x2="277.7" y1="15.0" y2="31.0" stroke="var(--s1)" stroke-width="2" stroke-linecap="round"/><circle cx="195.9" cy="23.0" r="5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2"/></g><g class="row" tabindex="0" data-tip="sim-variable · stream
+n 9
+min 0.109  p25 0.123
+median 0.184  p75 0.211
+p90 0.465  p95 0.895
+max 1.32 s"><rect class="hit" x="0" y="38.0" width="520" height="30"/><text x="158" y="57.0" text-anchor="end">sim-variable · stream</text><line x1="192.4" x2="463.0" y1="53.0" y2="53.0" stroke="var(--s2)" stroke-width="2" stroke-linecap="round" opacity=".55"/><rect x="195.5" y="48.0" width="19.4" height="10" rx="4" fill="var(--s2)"/><line x1="367.3" x2="367.3" y1="45.0" y2="61.0" stroke="var(--s2)" stroke-width="2" stroke-linecap="round"/><circle cx="208.9" cy="53.0" r="5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2"/></g></svg></div></div>
+<div class="card scroll"><table><tr><th>Provider</th><th>Mode</th><th class=n>n</th><th class=n>Errors</th><th class=n>TTFT p50</th><th class=n>TTFT p95</th><th class=n>TTFC p50</th><th class=n>Latency min</th><th class=n>p50</th><th class=n>p90</th><th class=n>p95</th><th class=n>max</th><th class=n>Out tok/s</th><th class=n>Decode tok/s</th><th class=n>Tokens p50</th><th class=n>Checks</th></tr><tr><td>sim-steady</td><td>stream</td><td class=n>9</td><td class=n title="no errors">0.0%</td><td class=n>0.077</td><td class=n>0.092*</td><td class=n>0.077</td><td class=n>0.064</td><td class=n>0.125</td><td class=n>0.288*</td><td class=n>0.492*</td><td class=n>0.697</td><td class=n>150.2</td><td class=n>415.8</td><td class=n>21.0</td><td class=n>0/9</td></tr><tr><td>sim-variable</td><td>stream</td><td class=n>9</td><td class=n title="no errors">0.0%</td><td class=n>0.137</td><td class=n>0.224*</td><td class=n>0.137</td><td class=n>0.109</td><td class=n>0.184</td><td class=n>0.465*</td><td class=n>0.895*</td><td class=n>1.32</td><td class=n>113.5</td><td class=n>414.3</td><td class=n>21.0</td><td class=n>0/9</td></tr></table></div>
+<div class="card scroll"><table><tr><th>Provider</th><th>Mode</th><th class=n>n</th><th class=n>Called a tool</th><th class=n>Same calls</th><th class=n>tool_args_valid</th><th class=n>tool_call</th><th class=n>tool_call_count</th></tr><tr><td>sim-steady</td><td>stream</td><td class=n>9</td><td class=n>88.9%</td><td class=n>78% (3 prompts)</td><td class=n>3/9</td><td class=n>0/15</td><td class=n>0/9</td></tr><tr><td>sim-variable</td><td>stream</td><td class=n>9</td><td class=n>88.9%</td><td class=n>67% (3 prompts)</td><td class=n>4/9</td><td class=n>0/15</td><td class=n>0/9</td></tr></table></div>
+<h3>tool-choice</h3><p class=sub>Follow tool_choice: a named function, &quot;required&quot; and &quot;none&quot;. These test whether the endpoint passes the setting through and the model obeys it. max_tokens 1024, 3 prompts.</p>
+<div class="charts"><div class="chart card"><h4>Time to first token, seconds (tool-choice)</h4><svg viewBox="0 0 520 94" role="img" aria-label="Time to first token, seconds (tool-choice)"><g class="axis"><line class="gridline" x1="168.0" x2="168.0" y1="8" y2="68"/><text x="168.0" y="86" text-anchor="middle">0</text><line class="gridline" x1="301.6" x2="301.6" y1="8" y2="68"/><text x="301.6" y="86" text-anchor="middle">0.1</text><line class="gridline" x1="435.2" x2="435.2" y1="8" y2="68"/><text x="435.2" y="86" text-anchor="middle">0.2</text></g><g class="row" tabindex="0" data-tip="sim-steady · stream
+n 9
+min 0.060  p25 0.061
+median 0.074  p75 0.077
+p90 0.077  p95 0.077
+max 0.077 s"><rect class="hit" x="0" y="8.0" width="520" height="30"/><text x="158" y="27.0" text-anchor="end">sim-steady · stream</text><line x1="247.7" x2="271.0" y1="23.0" y2="23.0" stroke="var(--s1)" stroke-width="2" stroke-linecap="round" opacity=".55"/><rect x="249.9" y="18.0" width="20.3" height="10" rx="4" fill="var(--s1)"/><line x1="270.8" x2="270.8" y1="15.0" y2="31.0" stroke="var(--s1)" stroke-width="2" stroke-linecap="round"/><circle cx="267.1" cy="23.0" r="5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2"/></g><g class="row" tabindex="0" data-tip="sim-variable · stream
+n 9
+min 0.093  p25 0.155
+median 0.184  p75 0.185
+p90 0.191  p95 0.203
+max 0.214 s"><rect class="hit" x="0" y="38.0" width="520" height="30"/><text x="158" y="57.0" text-anchor="end">sim-variable · stream</text><line x1="292.1" x2="454.5" y1="53.0" y2="53.0" stroke="var(--s2)" stroke-width="2" stroke-linecap="round" opacity=".55"/><rect x="375.2" y="48.0" width="40.0" height="10" rx="4" fill="var(--s2)"/><line x1="439.1" x2="439.1" y1="45.0" y2="61.0" stroke="var(--s2)" stroke-width="2" stroke-linecap="round"/><circle cx="414.5" cy="53.0" r="5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2"/></g></svg></div><div class="chart card"><h4>End-to-end latency, seconds (tool-choice)</h4><svg viewBox="0 0 520 94" role="img" aria-label="End-to-end latency, seconds (tool-choice)"><g class="axis"><line class="gridline" x1="168.0" x2="168.0" y1="8" y2="68"/><text x="168.0" y="86" text-anchor="middle">0</text><line class="gridline" x1="251.5" x2="251.5" y1="8" y2="68"/><text x="251.5" y="86" text-anchor="middle">0.25</text><line class="gridline" x1="335.0" x2="335.0" y1="8" y2="68"/><text x="335.0" y="86" text-anchor="middle">0.5</text><line class="gridline" x1="418.5" x2="418.5" y1="8" y2="68"/><text x="418.5" y="86" text-anchor="middle">0.75</text><line class="gridline" x1="502.0" x2="502.0" y1="8" y2="68"/><text x="502.0" y="86" text-anchor="middle">1</text></g><g class="row" tabindex="0" data-tip="sim-steady · stream
+n 9
+min 0.093  p25 0.104
+median 0.123  p75 0.445
+p90 0.478  p95 0.500
+max 0.522 s"><rect class="hit" x="0" y="8.0" width="520" height="30"/><text x="158" y="27.0" text-anchor="end">sim-steady · stream</text><line x1="198.9" x2="342.5" y1="23.0" y2="23.0" stroke="var(--s1)" stroke-width="2" stroke-linecap="round" opacity=".55"/><rect x="202.9" y="18.0" width="113.9" height="10" rx="4" fill="var(--s1)"/><line x1="335.1" x2="335.1" y1="15.0" y2="31.0" stroke="var(--s1)" stroke-width="2" stroke-linecap="round"/><circle cx="209.0" cy="23.0" r="5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2"/></g><g class="row" tabindex="0" data-tip="sim-variable · stream
+n 9
+min 0.125  p25 0.202
+median 0.232  p75 0.618
+p90 0.815  p95 0.896
+max 0.977 s"><rect class="hit" x="0" y="38.0" width="520" height="30"/><text x="158" y="57.0" text-anchor="end">sim-variable · stream</text><line x1="209.7" x2="494.5" y1="53.0" y2="53.0" stroke="var(--s2)" stroke-width="2" stroke-linecap="round" opacity=".55"/><rect x="235.4" y="48.0" width="139.1" height="10" rx="4" fill="var(--s2)"/><line x1="467.4" x2="467.4" y1="45.0" y2="61.0" stroke="var(--s2)" stroke-width="2" stroke-linecap="round"/><circle cx="245.5" cy="53.0" r="5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2"/></g></svg></div></div>
+<div class="card scroll"><table><tr><th>Provider</th><th>Mode</th><th class=n>n</th><th class=n>Errors</th><th class=n>TTFT p50</th><th class=n>TTFT p95</th><th class=n>TTFC p50</th><th class=n>Latency min</th><th class=n>p50</th><th class=n>p90</th><th class=n>p95</th><th class=n>max</th><th class=n>Out tok/s</th><th class=n>Decode tok/s</th><th class=n>Tokens p50</th><th class=n>Checks</th></tr><tr><td>sim-steady</td><td>stream</td><td class=n>9</td><td class=n title="no errors">0.0%</td><td class=n>0.074</td><td class=n>0.077*</td><td class=n>0.074</td><td class=n>0.093</td><td class=n>0.123</td><td class=n>0.478*</td><td class=n>0.500*</td><td class=n>0.522</td><td class=n>129.2</td><td class=n>340.5</td><td class=n>14.0</td><td class=n>3/9</td></tr><tr><td>sim-variable</td><td>stream</td><td class=n>9</td><td class=n title="no errors">0.0%</td><td class=n>0.184</td><td class=n>0.203*</td><td class=n>0.184</td><td class=n>0.125</td><td class=n>0.232</td><td class=n>0.815*</td><td class=n>0.896*</td><td class=n>0.977</td><td class=n>69.4</td><td class=n>279.4</td><td class=n>15.0</td><td class=n>3/9</td></tr></table></div>
+<div class="card scroll"><table><tr><th>Provider</th><th>Mode</th><th class=n>n</th><th class=n>Called a tool</th><th class=n>Same calls</th><th class=n>no_tool_call</th><th class=n>tool_args_valid</th><th class=n>tool_call</th><th class=n>tool_call_count</th></tr><tr><td>sim-steady</td><td>stream</td><td class=n>9</td><td class=n>66.7%</td><td class=n>78% (3 prompts)</td><td class=n>3/3</td><td class=n>6/6</td><td class=n>0/6</td><td class=n>3/3</td></tr><tr><td>sim-variable</td><td>stream</td><td class=n>9</td><td class=n>66.7%</td><td class=n>89% (3 prompts)</td><td class=n>3/3</td><td class=n>6/6</td><td class=n>0/6</td><td class=n>3/3</td></tr></table></div>
+<p class="legend">Called a tool: share of successful replies with at least one tool call. Same calls: for prompts run at least twice, the share of replies that match the most common set of calls (same functions, same parsed arguments), averaged over prompts. Check columns: replies that passed that check / replies it ran on.</p>
+<h2>Reliability</h2><p>All requests, warm-up included.</p>
+<div class="card scroll"><table><tr><th>Provider</th><th class=n>Planned</th><th class=n>Sent</th><th class=n>OK</th><th class=n>Error rate</th><th>Errors</th><th class=n>Skipped</th><th class=n>Cost</th></tr><tr><td>sim-steady</td><td class=n>37</td><td class=n>37</td><td class=n>37</td><td class=n>0.0%</td><td>-</td><td class=n>0</td><td class=n>-</td></tr><tr><td>sim-variable</td><td class=n>37</td><td class=n>37</td><td class=n>37</td><td class=n>0.0%</td><td>-</td><td class=n>0</td><td class=n>-</td></tr></table></div>
+<h2>Limitations</h2><ul><li>SYNTHETIC FIXTURE DATA: at least one endpoint is the in-process simulator. These numbers are not the performance of any real API.</li><li>Measured from one client, at one place and time, over its network path. Latency includes DNS, TLS on new connections, the network and any queueing at the provider.</li><li>TTFT is the time to the first streamed output chunk (reasoning, answer or tool call); TTFC is the time to the first answer chunk (text or tool call). Providers stream chunks, not single tokens, and some send a tool call&#x27;s arguments in one piece.</li><li>Tool-call checks test the shape of a call (which function, which arguments, valid against the schema) on small synthetic tasks. They do not show that a model picks tools well in your application; run your own tools and prompts for that.</li><li>Groups with fewer than 20 successful samples have unstable P90/P95 values; treat tail latencies there as indicative only.</li><li>Speed and check results say nothing about answer quality beyond the listed mechanical checks.</li>
+<li>sim-steady: Synthetic fixture data: not the performance of any real API.</li>
+<li>sim-variable: Synthetic fixture data: not the performance of any real API.</li>
+</ul>
+<footer>Generated by <a href="https://github.com/Moloch-AI/llm-api-benchmark">llm-api-benchmark</a>. Methodology: <a href="https://github.com/Moloch-AI/llm-api-benchmark/blob/main/docs/methodology.md">docs/methodology.md</a>.</footer>
+</main><div id="tip" role="tooltip"></div><script>
+(()=>{const t=document.getElementById('tip');document.querySelectorAll('svg .row').forEach(g=>{
+const show=e=>{t.textContent=g.dataset.tip;t.style.display='block';
+const x=Math.min(e.clientX+14,innerWidth-t.offsetWidth-8),y=Math.min(e.clientY+14,innerHeight-t.offsetHeight-8);
+t.style.left=x+'px';t.style.top=y+'px'};g.addEventListener('mousemove',show);
+g.addEventListener('mouseleave',()=>{t.style.display='none'});g.addEventListener('focus',e=>{
+const r=g.getBoundingClientRect();show({clientX:r.left+r.width/2,clientY:r.top})});
+g.addEventListener('blur',()=>{t.style.display='none'})})})();
+</script></body></html>

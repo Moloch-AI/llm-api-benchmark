@@ -52,7 +52,7 @@ from .runner import Plan, Runner, build_plan, missing_keys
 # Runs that send more than this many real requests ask for confirmation (or --yes).
 CONFIRM_ABOVE = 20
 FORMATS = ("json", "csv", "md", "html")
-TEMPLATES = ("synthetic-demo", "molochai", "openai-compatible")
+TEMPLATES = ("synthetic-demo", "synthetic-tools", "molochai", "molochai-tools", "openai-compatible")
 
 
 class CliError(Exception):
@@ -90,6 +90,7 @@ def _apply_overrides(cfg: RunConfig, a: argparse.Namespace) -> RunConfig:
     )
     try:
         return cfg.with_overrides(
+            dataset=_cli_dataset(getattr(a, "dataset", None)),
             providers=providers,
             modes=modes,
             workloads=workloads,
@@ -101,6 +102,16 @@ def _apply_overrides(cfg: RunConfig, a: argparse.Namespace) -> RunConfig:
         )
     except ConfigError as e:
         raise CliError("Invalid override:\n  " + "\n  ".join(e.problems)) from e
+
+
+def _cli_dataset(ref: str | None) -> str | None:
+    """A dataset path typed on the command line is relative to the current directory."""
+    if ref is None:
+        return None
+    looks_like_path = any(sep in ref for sep in ("/", "\\")) or ref.endswith(
+        (".yaml", ".yml", ".json")
+    )
+    return str(Path(ref).resolve()) if looks_like_path else ref
 
 
 def _plan_text(cfg: RunConfig, plan: Plan, dataset_ref: str, workloads: list[str]) -> str:
@@ -499,6 +510,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--formats", default="json,csv", help="any of json,csv,md,html (json is always written)"
     )
     run.add_argument("--providers", help="only these endpoint names (comma-separated)")
+    run.add_argument("--dataset", help="built-in dataset name (see `datasets`) or a file path")
     run.add_argument("--workloads", help="only these workloads (comma-separated)")
     run.add_argument("--modes", help="stream, plain or stream,plain")
     run.add_argument("--repetitions", type=int, help="repetitions per prompt")

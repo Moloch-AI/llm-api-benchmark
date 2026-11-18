@@ -169,6 +169,10 @@ SUMMARY_COLUMNS = [
     "cost_complete",
     "check_pass_rate",
     "checks_run",
+    "check_types",
+    "tool_call_rate",
+    "tool_agreement",
+    "tool_agreement_prompts",
 ]
 
 
@@ -209,6 +213,14 @@ def summary_csv(result: RunResult) -> str:
                     None if s.check_pass_rate is None else round(s.check_pass_rate, 4)
                 ),
                 "checks_run": s.checks_run,
+                "check_types": ";".join(f"{k}={v[0]}/{v[1]}" for k, v in s.check_types.items()),
+                "tool_call_rate": _csv_value(
+                    None if s.tool_call_rate is None else round(s.tool_call_rate, 4)
+                ),
+                "tool_agreement": _csv_value(
+                    None if s.tool_agreement is None else round(s.tool_agreement, 4)
+                ),
+                "tool_agreement_prompts": s.tool_agreement_prompts,
             }
         )
     return buf.getvalue()
@@ -241,8 +253,9 @@ def limitations(result: RunResult) -> list[str]:
     stream = [r for r in result.requests if r.mode == "stream" and r.ok]
     if stream:
         out.append(
-            "TTFT is the time to the first streamed text chunk (reasoning or answer); TTFC is the "
-            "time to the first answer chunk. Providers stream text chunks, not single tokens."
+            "TTFT is the time to the first streamed output chunk (reasoning, answer or tool call); "
+            "TTFC is the time to the first answer chunk (text or tool call). Providers stream "
+            "chunks, not single tokens, and some send a tool call's arguments in one piece."
         )
     if any(r.tokens_estimated for r in result.requests if r.ok):
         out.append(
@@ -253,6 +266,12 @@ def limitations(result: RunResult) -> list[str]:
         out.append(
             "Some replies include reasoning text. Output tokens/s counts every completion token the "
             "provider reports, reasoning included."
+        )
+    if any(r.tool_call_names is not None for r in result.requests):
+        out.append(
+            "Tool-call checks test the shape of a call (which function, which arguments, valid "
+            "against the schema) on small synthetic tasks. They do not show that a model picks "
+            "tools well in your application; run your own tools and prompts for that."
         )
     small = [s for s in result.summaries() if s.latency and s.latency.n < 20]
     if small:
@@ -301,6 +320,7 @@ def build_result(runner: Runner, warnings: list[str] | None = None) -> RunResult
                     "max_tokens": w.max_tokens,
                     "prompts": len(w.prompts),
                     "description": w.description,
+                    **({"tools": [t["function"]["name"] for t in w.tools]} if w.tools else {}),
                 }
                 for w in runner.dataset.select(cfg.workloads)
             },

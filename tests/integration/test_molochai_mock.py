@@ -20,7 +20,7 @@ import pytest
 
 from llm_api_benchmark.cli import main
 from llm_api_benchmark.config import parse_config
-from llm_api_benchmark.datasets import parse_dataset
+from llm_api_benchmark.datasets import load_dataset, parse_dataset
 from llm_api_benchmark.records import RequestRecord
 from llm_api_benchmark.runner import Runner, build_plan
 
@@ -141,3 +141,36 @@ def test_invalid_key_stops_the_endpoint(monkeypatch: pytest.MonkeyPatch) -> None
     records = run_prompts({"a": "hello", "b": "hello"}, "glm-5.3-flash", ["stream"])
     assert (records[0].http_status, records[0].error_type) == (402, "no_active_plan")
     assert records[1].status == "skipped"
+
+
+def test_tool_calls_arrive_whole_and_are_recorded() -> None:
+    cfg = parse_config(
+        {
+            "name": "mock-tools",
+            "dataset": "tools-v1",
+            "workloads": ["tool-select"],
+            "repetitions": 2,
+            "warmup": 0,
+            "modes": ["stream", "plain"],
+            "providers": [
+                {
+                    "name": "moloch",
+                    "preset": "molochai",
+                    "model": "llama-3.3-70b-instruct-abliterated",
+                    "rate_limit_rpm": 600,
+                }
+            ],
+        }
+    )
+    ds = load_dataset("tools-v1")
+    runner = Runner(cfg, ds, build_plan(cfg, ds))
+    asyncio.run(runner.run())
+    records = runner.ordered_records()
+    assert len(records) == 3 * 2 * 2
+    assert {r.status for r in records} == {"ok"}
+    # The mock, like the gateway, calls the first tool and sends its arguments in one chunk.
+    assert {tuple(r.tool_call_names or []) for r in records} == {("get_weather",)}
+    assert {r.finish_reason for r in records} == {"tool_calls"}
+    stream = [r for r in records if r.mode == "stream"]
+    assert all(r.ttfc_s is not None and r.text_chunks == 1 for r in stream)
+    assert len({r.tool_signature for r in records}) == 1

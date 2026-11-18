@@ -6,6 +6,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from ..tools import ToolCall, ToolCallDelta
+
 if TYPE_CHECKING:
     from ..config import ProviderConfig
 
@@ -46,6 +48,7 @@ class ChunkInfo:
     usage: Usage | None = None
     model: str | None = None
     error: ErrorInfo | None = None
+    tool_calls: tuple[ToolCallDelta, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -55,6 +58,7 @@ class CompletionInfo:
     finish_reason: str | None
     usage: Usage | None
     model: str | None
+    tool_calls: tuple[ToolCall, ...] = ()
 
 
 class Adapter(ABC):
@@ -78,6 +82,8 @@ class Adapter(ABC):
         stream: bool,
         max_tokens: int | None,
         temperature: float | None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: Any = None,
     ) -> ChatRequest: ...
 
     @abstractmethod

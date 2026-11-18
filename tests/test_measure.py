@@ -46,9 +46,10 @@ def run(
             transport=transport, timeout=httpx.Timeout(timeout_s)
         ) as client:
             req = adapter.build_request(MSG, stream=stream, max_tokens=16, temperature=None)
-            return await execute(
+            reply = await execute(
                 client, adapter, req, rec, stream=stream, timeout_s=timeout_s, prompt_chars=7
             )
+            return reply.text
 
     text = asyncio.run(go())
     return rec, text

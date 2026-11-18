@@ -96,7 +96,7 @@ applies to you.
 
 ## Command-line overrides
 
-`llm-bench run` accepts `--providers a,b`, `--workloads x,y`, `--modes stream,plain`,
+`llm-bench run` accepts `--dataset NAME|PATH`, `--providers a,b`, `--workloads x,y`, `--modes stream,plain`,
 `--repetitions N`, `--warmup N`, `--concurrency N`, `--max-requests N` and `--budget X`. Overrides
 are validated against the same bounds as the file.
 
@@ -172,3 +172,65 @@ the reasoning.
 | `json_keys` | `keys` | A JSON object with all the keys. |
 | `python_syntax` | `defines` | The code (from a ```python fence or the text) parses. It is never run. |
 | `last_number` | `value`, `tolerance` | The last number in the text equals the value. |
+
+### Tool workloads
+
+A workload can offer tools in the OpenAI `tools` format. Every request in it sends the
+definitions, and `tool_choice` when one is set: on the workload, or per prompt, which overrides
+it. The tools are never executed. Tool definitions count as input, so they are included in the
+input-token estimates used for budgets.
+
+```yaml
+id: my-tools
+version: 1.0.0
+workloads:
+  - id: lookup
+    max_tokens: 512
+    tools:
+      - type: function
+        function:
+          name: find_order
+          description: Look up an order by its number.
+          parameters:
+            type: object
+            properties:
+              order_number: {type: string, pattern: "^[0-9]{6}$"}
+              include_items: {type: boolean}
+            required: [order_number]
+            additionalProperties: false
+    prompts:
+      - id: by-number
+        prompt: Where is order 104233?
+        checks:
+          - {type: tool_call, name: find_order, arguments: {order_number: "104233"}}
+          - {type: tool_args_valid}
+      - id: forced
+        prompt: Check order 104233 for me.
+        tool_choice: {type: function, function: {name: find_order}}
+        checks:
+          - {type: tool_call, name: find_order}
+```
+
+`tool_choice` is `auto`, `none`, `required`, or `{type: function, function: {name: ...}}`.
+
+| Check | Fields | Passes when |
+|---|---|---|
+| `tool_call` | `name`, `arguments`, `tolerance` | A call to `name` was made. With `arguments`, one such call also has those values: strings compare without case or surrounding space, numbers within `tolerance`, lists in order, and extra arguments are allowed. |
+| `no_tool_call` | | The reply made no tool call. |
+| `tool_args_valid` | | At least one call was made, every call names a defined tool, and its arguments parse as JSON and validate against that tool's `parameters`. |
+| `tool_call_count` | `min`, `max` | The number of calls in the reply is within the bounds. |
+
+Text checks still run on the reply's text in a tool workload, which is useful for `no_tool_call`
+prompts.
+
+The argument validator supports these JSON Schema keywords:
+
+- `type`, `properties`, `required`, `additionalProperties` and `items`;
+- `enum` and `const`;
+- `minimum`, `maximum`, `exclusiveMinimum` and `exclusiveMaximum`;
+- `minLength`, `maxLength`, `pattern`, `minItems` and `maxItems`;
+- `anyOf` and `oneOf`.
+
+`description`, `title`, `default`, `examples` and `format` are accepted as annotations. Any other
+keyword, `$ref` included, is refused when the dataset loads, so no constraint is skipped
+silently.

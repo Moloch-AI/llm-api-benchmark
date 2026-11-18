@@ -65,9 +65,14 @@ class RequestRecord:
     retry_after_s: float | None = None
     should_retry: str | None = None
     cost: float | None = None
+    # Tool workloads only: the names called ([] = answered without a call) and a fingerprint
+    # of names plus parsed arguments, used to measure agreement across repetitions.
+    tool_call_names: list[str] | None = None
+    tool_signature: str | None = None
     checks: list[dict[str, Any]] | None = None
     checks_passed: bool | None = None
     output: str | None = None
+    tool_calls: list[dict[str, str]] | None = None  # with save_outputs only
     skip_reason: str | None = None
     extra: dict[str, Any] = field(default_factory=dict)
 
@@ -166,6 +171,8 @@ CSV_COLUMNS = [
     "comment_lines",
     "finish_reason",
     "done_marker",
+    "tool_call_names",
+    "tool_signature",
     "cost",
     "checks_passed",
     "skip_reason",

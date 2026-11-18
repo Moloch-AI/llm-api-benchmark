@@ -89,6 +89,25 @@ def terminal_report(result: RunResult) -> str:
                 right=set(range(2, 12)),
             )
         )
+        tooled = [s for s in summaries if s.workload == wl and s.tool_call_rate is not None]
+        if tooled:
+            kinds = sorted({k for s in tooled for k in s.check_types})
+            lines.append(
+                render_table(
+                    ["Provider", "Mode", "Called a tool", "Same calls", *kinds],
+                    [
+                        [
+                            s.provider,
+                            s.mode,
+                            f.pct(s.tool_call_rate),
+                            f.agreement(s),
+                            *(f.check_type(s, k) for k in kinds),
+                        ]
+                        for s in tooled
+                    ],
+                    right=set(range(2, 4 + len(kinds))),
+                )
+            )
         lines.append("")
 
     totals = result.totals()
@@ -119,4 +138,6 @@ def terminal_report(result: RunResult) -> str:
     if reasons:
         lines += ["", "Skipped because:"] + [f"  - {r}" for r in reasons]
     lines += ["", f.LEGEND]
+    if any(s.tool_call_rate is not None for s in summaries):
+        lines.append(f.TOOL_LEGEND)
     return "\n".join(lines) + "\n"
