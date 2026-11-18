@@ -22,3 +22,17 @@ To produce your own:
 llm-bench init synthetic-demo
 llm-bench run --config synthetic-demo.yaml --yes --formats json,csv,md,html
 ```
+
+## synthetic-tools/: synthetic fixture data, tool calling
+
+The same files for `benchmarks/synthetic-tools.yaml`: the `tools-v1` dataset against two simulated
+endpoints. The simulator does not read prompts. It picks a tool by a hash of the messages, now and
+then picks another or answers in text, and fills arguments from the schema with placeholder
+values. **Most argument checks fail by design.** The files show what the tool-call tables and
+fields look like, not how any model calls tools.
+
+| File | Made with |
+|---|---|
+| [terminal.txt](synthetic-tools/terminal.txt) | `llm-bench run --config benchmarks/synthetic-tools.yaml --yes --quiet --formats json,csv,md,html` (stdout) |
+| [results.json](synthetic-tools/results.json), [requests.csv](synthetic-tools/requests.csv), [summary.csv](synthetic-tools/summary.csv) | the same run; see `tool_call_names` and `tool_signature` per request |
+| [report.md](synthetic-tools/report.md), [report.html](synthetic-tools/report.html) | the same run |

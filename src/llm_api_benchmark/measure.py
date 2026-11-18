@@ -12,6 +12,7 @@ import json
 import math
 import time
 from collections.abc import Callable
+from dataclasses import dataclass, field
 
 import httpx
 
@@ -28,9 +29,18 @@ from .records import (
 )
 from .redact import redact
 from .sse import Comment, SSEParser
+from .tools import ToolCall, ToolCallAccumulator, signature
 
 MAX_ERROR_BODY = 64 * 1024
 Clock = Callable[[], float]
+
+
+@dataclass
+class Reply:
+    """What the model returned, for the checks: the answer text and any tool calls."""
+
+    text: str = ""
+    tool_calls: list[ToolCall] = field(default_factory=list)
 
 
 def estimate_tokens(chars: int) -> int:
@@ -48,10 +58,12 @@ async def execute(
     timeout_s: float,
     prompt_chars: int,
     clock: Clock = time.perf_counter,
-) -> str:
-    """Run one request, fill ``rec`` in place and return the answer text (for checks)."""
+) -> Reply:
+    """Run one request, fill ``rec`` in place and return the answer and tool calls (for checks)."""
     t0 = clock()
     content: list[str] = []
+    calls = ToolCallAccumulator()
+    plain_calls: list[ToolCall] = []
     reasoning_chars = 0
     usage: Usage | None = None
     try:
@@ -74,7 +86,7 @@ async def execute(
                     )
                     rec.status = HTTP_ERROR
                     rec.error_type, rec.error_message = err.type, err.message
-                    return ""
+                    return Reply()
                 ctype = resp.headers.get("content-type", "")
                 if stream:
                     if "text/event-stream" not in ctype:
@@ -85,9 +97,9 @@ async def execute(
                             f"expected text/event-stream, got {ctype or 'no content type'}: "
                             + body[:200].decode("utf-8", "replace")
                         )
-                        return ""
+                        return Reply()
                     usage, reasoning_chars = await _read_stream(
-                        adapter, resp, rec, content, t0, clock
+                        adapter, resp, rec, content, calls, t0, clock
                     )
                 else:
                     raw = await resp.aread()
@@ -100,8 +112,9 @@ async def execute(
                         rec.error_message = redact(
                             str(err) if isinstance(err, InvalidResponse) else "not JSON"
                         )
-                        return ""
+                        return Reply()
                     content.append(info.content)
+                    plain_calls.extend(info.tool_calls)
                     reasoning_chars = len(info.reasoning)
                     usage = info.usage
                     rec.finish_reason = info.finish_reason
@@ -139,20 +152,26 @@ async def execute(
         raise
 
     text = "".join(content)
+    tool_calls = plain_calls or calls.calls()
+    tool_chars = sum(len(c.name) + len(c.arguments) for c in tool_calls)
     rec.output_chars = len(text)
     rec.reasoning_chars = reasoning_chars
+    if "tools" in request.body or tool_calls:
+        rec.tool_call_names = [c.name for c in tool_calls]
+        if rec.status == OK:
+            rec.tool_signature = signature(tool_calls)
     if usage is not None and usage.completion_tokens is not None:
         rec.usage_reported = True
         rec.prompt_tokens = usage.prompt_tokens
         rec.completion_tokens = usage.completion_tokens
         rec.reasoning_tokens = usage.reasoning_tokens
-    elif rec.status in (OK, STREAM_ERROR) and (rec.output_chars or reasoning_chars):
+    elif rec.status in (OK, STREAM_ERROR) and (rec.output_chars or reasoning_chars or tool_chars):
         rec.tokens_estimated = True
-        rec.completion_tokens = estimate_tokens(rec.output_chars + reasoning_chars)
+        rec.completion_tokens = estimate_tokens(rec.output_chars + reasoning_chars + tool_chars)
     if rec.prompt_tokens is None and rec.completion_tokens is not None:
         rec.prompt_tokens = estimate_tokens(prompt_chars)
         rec.tokens_estimated = True
-    return text
+    return Reply(text, tool_calls)
 
 
 async def _read_stream(
@@ -160,6 +179,7 @@ async def _read_stream(
     resp: httpx.Response,
     rec: RequestRecord,
     content: list[str],
+    calls: ToolCallAccumulator,
     t0: float,
     clock: Clock,
 ) -> tuple[Usage | None, int]:
@@ -191,17 +211,21 @@ async def _read_stream(
                     rec.status = STREAM_ERROR
                     rec.error_type, rec.error_message = chunk.error.type, chunk.error.message
                 continue
-            if chunk.reasoning or chunk.content:
+            if chunk.reasoning or chunk.content or chunk.tool_calls:
                 if rec.ttft_s is None:
                     rec.ttft_s = now - t0
                 rec.last_token_s = now - t0
                 rec.text_chunks += 1
             if chunk.reasoning:
                 reasoning_chars += len(chunk.reasoning)
-            if chunk.content:
+            if chunk.content or chunk.tool_calls:
+                # The answer starts with its first content or tool-call fragment.
                 if rec.ttfc_s is None:
                     rec.ttfc_s = now - t0
-                content.append(chunk.content)
+                if chunk.content:
+                    content.append(chunk.content)
+                for delta in chunk.tool_calls:
+                    calls.add(delta)
             if chunk.usage:
                 usage = chunk.usage
             if chunk.model and rec.response_model is None:

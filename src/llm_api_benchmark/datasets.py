@@ -18,6 +18,7 @@ from typing import Any
 import yaml
 
 from .checks import validate_spec
+from .tools import tool_index, validate_tool_choice, validate_tools
 
 _ID = re.compile(r"^[a-z0-9][a-z0-9_-]{0,47}$")
 _ROLES = {"system", "user", "assistant"}
@@ -34,6 +35,7 @@ class Prompt:
     id: str
     messages: tuple[dict[str, str], ...]
     checks: tuple[dict[str, Any], ...]
+    tool_choice: Any = None
 
     def message_list(self) -> list[dict[str, Any]]:
         return [dict(m) for m in self.messages]
@@ -48,6 +50,15 @@ class Workload:
     description: str
     max_tokens: int
     prompts: tuple[Prompt, ...]
+    tools: tuple[dict[str, Any], ...] = ()
+    tool_choice: Any = None
+
+    def tool_schemas(self) -> dict[str, Any]:
+        return tool_index(self.tools)
+
+    def tools_chars(self) -> int:
+        """Size of the tool definitions sent with every request (they count as input)."""
+        return len(json.dumps(list(self.tools))) if self.tools else 0
 
 
 @dataclass(frozen=True)
@@ -142,7 +153,7 @@ def parse_dataset(data: Any, *, source: str) -> Dataset:
             problems.append(f"{wpath}: must be a mapping")
             continue
         for key in w:
-            if key not in {"id", "description", "max_tokens", "prompts"}:
+            if key not in {"id", "description", "max_tokens", "prompts", "tools", "tool_choice"}:
                 problems.append(f"{wpath}: unknown key '{key}'")
         wid = w.get("id")
         if not isinstance(wid, str) or not _ID.match(wid):
@@ -155,6 +166,24 @@ def parse_dataset(data: Any, *, source: str) -> Dataset:
         if not isinstance(max_tokens, int) or isinstance(max_tokens, bool) or max_tokens < 1:
             problems.append(f"{wpath}.max_tokens: a whole number of output tokens")
             max_tokens = 1
+        tools: list[dict[str, Any]] = []
+        tool_names: set[str] | None = None
+        if "tools" in w:
+            tool_problems = validate_tools(w["tools"], f"{wpath}.tools")
+            problems.extend(tool_problems)
+            if not tool_problems:
+                tools = list(w["tools"])
+            # Name the tools even when a definition is broken, so the checks below are still
+            # validated against them instead of repeating "needs a workload with tools".
+            listed = w["tools"] if isinstance(w["tools"], list) else []
+            tool_names = set(tool_index([t for t in listed if isinstance(t, dict)]))
+        if "tool_choice" in w:
+            if tool_names is None:
+                problems.append(f"{wpath}.tool_choice: needs tools")
+            else:
+                problems.extend(
+                    validate_tool_choice(w["tool_choice"], tool_names, f"{wpath}.tool_choice")
+                )
         prompts: list[Prompt] = []
         raw_prompts = w.get("prompts")
         if not isinstance(raw_prompts, list) or not raw_prompts:
@@ -163,14 +192,21 @@ def parse_dataset(data: Any, *, source: str) -> Dataset:
         seen_p: set[str] = set()
         for pi, p in enumerate(raw_prompts):
             ppath = f"{wpath}.prompts[{pi}]"
-            prompt = _parse_prompt(p, ppath, problems)
+            prompt = _parse_prompt(p, ppath, problems, tool_names)
             if prompt:
                 if prompt.id in seen_p:
                     problems.append(f"{ppath}.id: '{prompt.id}' is used twice in {wid}")
                 seen_p.add(prompt.id)
                 prompts.append(prompt)
         workloads.append(
-            Workload(wid, str(w.get("description", "")).strip(), int(max_tokens), tuple(prompts))
+            Workload(
+                wid,
+                str(w.get("description", "")).strip(),
+                int(max_tokens),
+                tuple(prompts),
+                tuple(tools),
+                w.get("tool_choice"),
+            )
         )
     if problems:
         raise DatasetError(problems)
@@ -187,12 +223,14 @@ def parse_dataset(data: Any, *, source: str) -> Dataset:
     )
 
 
-def _parse_prompt(p: Any, path: str, problems: list[str]) -> Prompt | None:
+def _parse_prompt(
+    p: Any, path: str, problems: list[str], tool_names: set[str] | None = None
+) -> Prompt | None:
     if not isinstance(p, dict):
         problems.append(f"{path}: must be a mapping")
         return None
     for key in p:
-        if key not in {"id", "system", "prompt", "messages", "checks"}:
+        if key not in {"id", "system", "prompt", "messages", "checks", "tool_choice"}:
             problems.append(f"{path}: unknown key '{key}'")
     pid = p.get("id")
     if not isinstance(pid, str) or not _ID.match(pid):
@@ -224,5 +262,12 @@ def _parse_prompt(p: Any, path: str, problems: list[str]) -> Prompt | None:
         problems.append(f"{path}.checks: must be a list")
         checks = []
     for ci, spec in enumerate(checks):
-        problems.extend(validate_spec(spec, f"{path}.checks[{ci}]"))
-    return Prompt(pid, tuple(messages), tuple(checks))
+        problems.extend(validate_spec(spec, f"{path}.checks[{ci}]", tool_names))
+    if "tool_choice" in p:
+        if tool_names is None:
+            problems.append(f"{path}.tool_choice: needs a workload with tools")
+        else:
+            problems.extend(
+                validate_tool_choice(p["tool_choice"], tool_names, f"{path}.tool_choice")
+            )
+    return Prompt(pid, tuple(messages), tuple(checks), p.get("tool_choice"))

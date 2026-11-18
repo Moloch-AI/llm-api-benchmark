@@ -184,6 +184,27 @@ def _summary_table(rows: list[GroupSummary]) -> str:
     return f'<div class="card scroll"><table>{head}{"".join(body)}</table></div>'
 
 
+def _detail_table(rows: list[GroupSummary]) -> str:
+    """Per-check pass counts and tool-call figures, for groups that have them."""
+    kinds = sorted({k for s in rows for k in s.check_types})
+    tools = any(s.tool_call_rate is not None for s in rows)
+    head = "<tr><th>Provider</th><th>Mode</th><th class=n>n</th>"
+    if tools:
+        head += "<th class=n>Called a tool</th><th class=n>Same calls</th>"
+    head += "".join(f"<th class=n>{_e(k)}</th>" for k in kinds) + "</tr>"
+    body = []
+    for s in rows:
+        cells = [f.pct(s.tool_call_rate), f.agreement(s)] if tools else []
+        cells += [f.check_type(s, k) for k in kinds]
+        body.append(
+            f"<tr><td>{_e(s.provider)}</td><td>{_e(s.mode)}</td>"
+            f"<td class=n>{s.latency.n if s.latency else 0}</td>"
+            + "".join(f"<td class=n>{_e(c)}</td>" for c in cells)
+            + "</tr>"
+        )
+    return f'<div class="card scroll"><table>{head}{"".join(body)}</table></div>'
+
+
 def _kv_table(rows: list[tuple[str, str]]) -> str:
     body = "".join(f"<tr><th>{_e(k)}</th><td>{_e(v)}</td></tr>" for k, v in rows)
     return f'<div class="card scroll"><table>{body}</table></div>'
@@ -299,7 +320,12 @@ def html_report(result: RunResult) -> str:
         ]
         out.append(f'<div class="charts">{"".join(c for c in charts if c)}</div>')
         out.append(_summary_table(group))
+        detail = [s for s in group if f.has_detail(s)]
+        if detail:
+            out.append(_detail_table(detail))
 
+    if any(f.has_detail(s) for s in summaries):
+        out.append(f'<p class="legend">{_e(f.TOOL_LEGEND)}</p>')
     out.append("<h2>Reliability</h2><p>All requests, warm-up included.</p>")
     rows = []
     for t in result.totals():

@@ -20,6 +20,16 @@ First version.
   confirmation above 20 requests, concurrency 1 by default (at most 8), `rate_limit_rpm`
   pacing, `Retry-After` handling, and stopping an endpoint after permanent errors.
 - Built-in dataset `core-v1`: 8 workloads × 3 prompts, with checks.
+- Tool calling:
+  - the `tools-v1` dataset: 4 workloads × 3 prompts for picking a function, typed arguments,
+    several calls in one reply, and `tool_choice`;
+  - `tools` and `tool_choice` in your own datasets;
+  - checks `tool_call`, `no_tool_call`, `tool_args_valid` (a built-in JSON Schema subset) and
+    `tool_call_count`;
+  - streamed calls rebuilt from fragments;
+  - "Same calls", a figure for agreement across repetitions;
+  - per-check pass counts in the reports.
+- Templates `synthetic-tools` and `molochai-tools`, and `run --dataset`.
 - Reports: terminal, JSON, CSV (requests and summary), Markdown, and self-contained HTML with SVG
   charts. `compare` adds bootstrap confidence intervals.
 - Credential redaction in terminal output, logs and result files.

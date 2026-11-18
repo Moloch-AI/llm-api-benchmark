@@ -12,14 +12,16 @@ connection, upload, any queueing at the provider, generation and download.
 | Metric | Definition | Modes |
 |---|---|---|
 | Headers | Time until the response status and headers arrive. | both |
-| TTFT | Time until the first streamed chunk that carries generated text, reasoning or answer. | stream |
-| TTFC | Time until the first chunk that carries answer text (`delta.content`). For a reasoning model this comes after the reasoning; for other models it equals TTFT. | stream |
+| TTFT | Time until the first streamed chunk that carries generated output: reasoning, answer text or a tool-call fragment. | stream |
+| TTFC | Time until the first chunk that carries the answer: text (`delta.content`) or a tool-call fragment (`delta.tool_calls`). For a reasoning model this comes after the reasoning; for other models it equals TTFT. | stream |
 | Latency | Time until the last byte: `[DONE]` or the end of the stream, or the end of the body for a plain request. | both |
 | Out tok/s | `completion_tokens / latency`. End-to-end output speed, TTFT included. | both |
 | Decode tok/s | `(completion_tokens - 1) / (time of last text chunk - time of first text chunk)`. Speed once text is flowing. | stream |
 | Error rate | Failed requests / requests sent. Skipped and cancelled requests are not counted as sent. | both |
 | Cost | `prompt_tokens x input price + completion_tokens x output price`, only with prices you supply. | both |
 | Checks | Share of successful replies that pass the prompt's deterministic checks. | both |
+| Called a tool | Tool workloads: share of successful replies with at least one tool call. | both |
+| Same calls | Tool workloads: agreement across repetitions (see [Tool calls](#tool-calls)). | both |
 
 ### Chunks, not tokens
 
@@ -28,6 +30,48 @@ A chunk can carry several tokens, and providers batch differently. TTFT is the a
 chunk with text, and decode tok/s spreads the reported token count over the time between the
 first and last text chunks. Neither times individual tokens. Inter-token latency is not reported,
 because chunk gaps are not token gaps.
+
+### Tool calls
+
+When a workload offers tools, each request sends them in the OpenAI `tools` format, plus
+`tool_choice` when the dataset sets it. A plain reply's calls come from `message.tool_calls`. A
+streamed reply's calls are rebuilt from `delta.tool_calls` fragments:
+
+- fragments are grouped by `index`;
+- the first name seen is kept (some servers repeat it in every fragment);
+- argument fragments are concatenated.
+
+The legacy single `function_call` field is read too. Arguments sent as a JSON object rather than
+a string are accepted and kept as JSON text.
+
+Some gateways buffer a call and send its arguments in one chunk; MolochAI does. On those
+endpoints TTFC for a tool reply is close to its latency. Per-chunk speed figures mean little
+there, so compare latency.
+
+For every successful reply in a tool workload the record keeps:
+
+- `tool_call_names`: an empty list means the model answered without a call;
+- `tool_signature`: a 16-character hash of the calls, sorted, with arguments parsed and
+  re-serialized with sorted keys.
+
+The hash stores no content. The full calls are kept only with `save_outputs: true`.
+
+**Same calls** measures agreement. For each prompt with at least two successful replies in a
+group, take the share of replies whose signature equals the most common one. Then average over
+those prompts; the report shows how many prompts that covers.
+
+- 100% means every repetition made the same calls with the same arguments.
+- A model that sometimes answers in text and sometimes calls a tool scores lower.
+
+This is a consistency figure, not a correctness figure. A model can agree with itself and be
+wrong; the checks cover correctness.
+
+The checks for calls are `tool_call`, `no_tool_call`, `tool_args_valid` and `tool_call_count`;
+[configuration.md](configuration.md#tool-workloads) defines them. They run on small synthetic
+tasks with explicit values in the prompt. They show whether an endpoint and model return
+well-formed, expected calls. They are not a measure of how well a model uses tools in a real
+application, where tools, prompts and multi-turn state differ. `tools-v1` has no multi-turn
+workloads: no tool result is sent back.
 
 ### Where token counts come from
 

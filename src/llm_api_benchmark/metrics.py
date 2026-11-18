@@ -102,6 +102,12 @@ class GroupSummary:
     checks_run: int
     checks_passed: int
     finish_reasons: dict[str, int] = field(default_factory=dict)
+    # Per check type: [passed, run], over successful replies.
+    check_types: dict[str, list[int]] = field(default_factory=dict)
+    # Tool workloads only (None otherwise).
+    tool_call_rate: float | None = None
+    tool_agreement: float | None = None
+    tool_agreement_prompts: int = 0
 
     @property
     def key(self) -> tuple[str, str, str, str]:
@@ -150,6 +156,10 @@ class GroupSummary:
             if self.check_pass_rate is None
             else round(self.check_pass_rate, 4),
             "finish_reasons": self.finish_reasons,
+            "check_types": self.check_types,
+            "tool_call_rate": _r(self.tool_call_rate),
+            "tool_agreement": _r(self.tool_agreement),
+            "tool_agreement_prompts": self.tool_agreement_prompts,
         }
 
 
@@ -168,6 +178,8 @@ def summarize(records: Iterable[RequestRecord]) -> list[GroupSummary]:
         costs = [r.cost for r in executed]
         known = [c for c in costs if c is not None]
         checked = [r for r in ok if r.checks_passed is not None]
+        tooled = [r for r in ok if r.tool_call_names is not None]
+        agreement, agreement_n = tool_agreement(tooled)
         out.append(
             GroupSummary(
                 provider=provider,
@@ -196,9 +208,50 @@ def summarize(records: Iterable[RequestRecord]) -> list[GroupSummary]:
                 finish_reasons=dict(
                     sorted(Counter(r.finish_reason for r in ok if r.finish_reason).items())
                 ),
+                check_types=_check_types(checked),
+                tool_call_rate=(
+                    sum(1 for r in tooled if r.tool_call_names) / len(tooled) if tooled else None
+                ),
+                tool_agreement=agreement,
+                tool_agreement_prompts=agreement_n,
             )
         )
     return out
+
+
+def tool_agreement(records: Iterable[RequestRecord]) -> tuple[float | None, int]:
+    """How often repeated runs of the same prompt make the same tool calls.
+
+    For each prompt with at least two successful replies, the share of replies that match the
+    most common call signature (same functions, same parsed arguments, or no call); then the
+    mean over those prompts. Returns (mean, number of prompts it covers).
+    """
+    by_prompt: dict[str, list[str]] = {}
+    for r in records:
+        if r.tool_signature is not None:
+            by_prompt.setdefault(r.prompt_id, []).append(r.tool_signature)
+    shares = [
+        Counter(sigs).most_common(1)[0][1] / len(sigs)
+        for sigs in by_prompt.values()
+        if len(sigs) >= 2
+    ]
+    if not shares:
+        return None, 0
+    return sum(shares) / len(shares), len(shares)
+
+
+def _check_types(records: Iterable[RequestRecord]) -> dict[str, list[int]]:
+    counts: dict[str, list[int]] = {}
+    for r in records:
+        for c in r.checks or []:
+            entry = counts.setdefault(str(c.get("type")), [0, 0])
+            entry[0] += 1 if c.get("passed") else 0
+            entry[1] += 1
+    return dict(sorted(counts.items()))
+
+
+def _r(value: float | None, digits: int = 4) -> float | None:
+    return None if value is None else round(value, digits)
 
 
 @dataclass

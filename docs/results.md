@@ -27,7 +27,7 @@ redacted. Error messages pass through the same filter, in case a provider echoes
 | `providers` | Each endpoint: preset, base URL, model, key variable name, header names, params, pricing with source and date, rate limit, preset notes. |
 | `warnings` | For example, stale pricing. |
 | `limitations` | Plain statements about what the run can and cannot show (also printed in the reports). |
-| `summary` | Per-group statistics (the same as `.summary.csv`, with full distributions). |
+| `summary` | Per-group statistics (the same as `.summary.csv`, with full distributions). Includes `check_types` (passed and run per check type) and, for tool workloads, `tool_call_rate`, `tool_agreement` and `tool_agreement_prompts`. |
 | `provider_totals` | Per-endpoint reliability across all workloads, warm-ups included. |
 | `requests` | Every planned request, in plan order (fields below). |
 
@@ -46,4 +46,6 @@ redacted. Error messages pass through the same filter, in case a provider echoes
 | `retry_after_s`, `should_retry` | `Retry-After` and `X-Should-Retry` headers on errors. |
 | `cost` | With pricing, from the reported (or estimated) tokens. |
 | `checks`, `checks_passed` | Check results, when the prompt has checks. |
+| `tool_call_names`, `tool_signature` | Tool workloads: the functions called (`[]` = none) and a hash of the calls with parsed arguments ([methodology](methodology.md#tool-calls)). |
 | `output` | Reply text, only with `save_outputs: true`. |
+| `tool_calls` | Each call's `name` and `arguments` text, only with `save_outputs: true`. |

@@ -1,0 +1,24 @@
+# Offline tool-calling demo: two simulated endpoints. No key, no network, nothing is billed.
+# The simulator does not read prompts: it picks a tool by a hash of the messages and fills the
+# arguments from the schema, so most argument checks fail by design. Every report made from this
+# file is labeled SYNTHETIC FIXTURE DATA; it shows what the tool-call reports look like.
+#
+#   llm-bench run --config synthetic-tools.yaml --yes
+version: 1
+name: synthetic-tools
+dataset: tools-v1
+modes: [stream]
+repetitions: 3
+warmup: 1
+concurrency: 4
+max_requests: 80
+providers:
+  - name: sim-steady
+    preset: synthetic
+    model: synthetic-steady
+    synthetic: {ttft_ms: 300, tokens_per_s: 80, jitter: 0.15, output_tokens: 150, time_scale: 0.25}
+  - name: sim-variable
+    preset: synthetic
+    model: synthetic-variable
+    synthetic:
+      {ttft_ms: 450, tokens_per_s: 120, jitter: 0.6, error_rate: 0.05, output_tokens: 200, time_scale: 0.25}

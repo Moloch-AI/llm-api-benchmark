@@ -7,6 +7,7 @@ import re
 from typing import Any
 
 from ..redact import redact
+from ..tools import ToolCall, ToolCallDelta
 from .base import Adapter, ChatRequest, ChunkInfo, CompletionInfo, ErrorInfo, InvalidResponse, Usage
 
 _TITLE = re.compile(r"(?is)<title>(.*?)</title>")
@@ -21,9 +22,15 @@ class OpenAIChatAdapter(Adapter):
         stream: bool,
         max_tokens: int | None,
         temperature: float | None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: Any = None,
     ) -> ChatRequest:
         p = self.provider
         body: dict[str, Any] = {"model": p.model, "messages": messages}
+        if tools:
+            body["tools"] = tools
+            if tool_choice is not None:
+                body["tool_choice"] = tool_choice
         if stream:
             body["stream"] = True
             if p.stream_usage:
@@ -78,6 +85,7 @@ class OpenAIChatAdapter(Adapter):
             finish_reason=_finish(choice.get("finish_reason")),
             usage=usage,
             model=model,
+            tool_calls=_tool_deltas(delta),
         )
 
     def parse_completion(self, data: Any) -> CompletionInfo:
@@ -100,6 +108,7 @@ class OpenAIChatAdapter(Adapter):
             finish_reason=_finish(choices[0].get("finish_reason")),
             usage=_usage(data.get("usage")),
             model=data.get("model") if isinstance(data.get("model"), str) else None,
+            tool_calls=_tool_calls(message),
         )
 
     def parse_error(self, status: int, body: bytes, content_type: str) -> ErrorInfo:
@@ -156,6 +165,59 @@ def _text(value: Any) -> str:
             if isinstance(p, dict) and isinstance(p.get("text"), str)
         )
     return ""
+
+
+def _tool_deltas(delta: dict[str, Any]) -> tuple[ToolCallDelta, ...]:
+    raw = delta.get("tool_calls")
+    if raw is None and isinstance(delta.get("function_call"), dict):  # legacy single call
+        raw = [{"index": 0, "function": delta["function_call"]}]
+    if raw is None:
+        return ()
+    if not isinstance(raw, list):
+        raise InvalidResponse("delta.tool_calls is not a list")
+    out = []
+    for pos, item in enumerate(raw):
+        if not isinstance(item, dict):
+            raise InvalidResponse("delta.tool_calls has an entry that is not an object")
+        fn = item.get("function") or {}
+        if not isinstance(fn, dict):
+            raise InvalidResponse("delta.tool_calls[].function is not an object")
+        index = item.get("index")
+        args = fn.get("arguments")
+        out.append(
+            ToolCallDelta(
+                index=index if isinstance(index, int) and not isinstance(index, bool) else pos,
+                id=item.get("id") if isinstance(item.get("id"), str) else None,
+                name=fn.get("name") if isinstance(fn.get("name"), str) else None,
+                arguments=args if isinstance(args, str) else (json.dumps(args) if args else ""),
+            )
+        )
+    return tuple(out)
+
+
+def _tool_calls(message: dict[str, Any]) -> tuple[ToolCall, ...]:
+    raw = message.get("tool_calls")
+    if raw is None and isinstance(message.get("function_call"), dict):  # legacy single call
+        raw = [{"function": message["function_call"]}]
+    if raw is None:
+        return ()
+    if not isinstance(raw, list):
+        raise InvalidResponse("message.tool_calls is not a list")
+    out = []
+    for item in raw:
+        fn = item.get("function") if isinstance(item, dict) else None
+        if not isinstance(fn, dict) or not isinstance(fn.get("name"), str):
+            raise InvalidResponse("message.tool_calls has an entry without function.name")
+        args = fn.get("arguments")
+        out.append(
+            ToolCall(
+                name=fn["name"],
+                # The spec says a JSON string; some servers send an object. Keep it comparable.
+                arguments=args if isinstance(args, str) else (json.dumps(args) if args else ""),
+                id=item.get("id") if isinstance(item.get("id"), str) else None,
+            )
+        )
+    return tuple(out)
 
 
 def _finish(value: Any) -> str | None:

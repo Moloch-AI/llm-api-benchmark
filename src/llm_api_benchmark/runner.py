@@ -51,6 +51,7 @@ MAX_RETRY_AFTER_WAIT_S = 300.0
 # system text the provider adds.
 _PROMPT_MARGIN = 1.25
 _PROMPT_OVERHEAD = 64
+_MAX_SAVED_ARGS = 4000
 
 Clock = Callable[[], float]
 Sleep = Callable[[float], Awaitable[None]]
@@ -80,7 +81,8 @@ class PlannedRequest:
         return max(limit, p.assumed_max_output_tokens or limit)
 
     def estimated_prompt_tokens(self) -> int:
-        return math.ceil(estimate_tokens(self.prompt.chars()) * _PROMPT_MARGIN) + _PROMPT_OVERHEAD
+        chars = self.prompt.chars() + self.workload.tools_chars()
+        return math.ceil(estimate_tokens(chars) * _PROMPT_MARGIN) + _PROMPT_OVERHEAD
 
 
 @dataclass
@@ -330,20 +332,24 @@ class Runner:
                 rec.skip_reason = self.stop_reason or state.aborted
                 return None
             rec.started_at = datetime.now(UTC).isoformat(timespec="milliseconds")
+            workload = planned.workload
+            choice = planned.prompt.tool_choice
             request = adapter.build_request(
                 planned.prompt.message_list(),
                 stream=planned.mode == "stream",
                 max_tokens=planned.max_tokens(self.cfg),
                 temperature=self.cfg.temperature,
+                tools=[dict(t) for t in workload.tools] or None,
+                tool_choice=choice if choice is not None else workload.tool_choice,
             )
-            text = await execute(
+            reply = await execute(
                 client,
                 adapter,
                 request,
                 rec,
                 stream=planned.mode == "stream",
                 timeout_s=p.timeout_s or self.cfg.timeout_s,
-                prompt_chars=planned.prompt.chars(),
+                prompt_chars=planned.prompt.chars() + workload.tools_chars(),
                 clock=self._clock,
             )
             if p.pricing is not None:
@@ -353,11 +359,21 @@ class Runner:
                 elif rec.status in (TIMEOUT, CONNECTION_ERROR, STREAM_ERROR):
                     actual = reserved  # it may have been billed; assume the worst
             if rec.ok and self.cfg.checks and planned.prompt.checks:
-                results = run_checks(text, list(planned.prompt.checks))
+                results = run_checks(
+                    reply.text,
+                    list(planned.prompt.checks),
+                    tool_calls=reply.tool_calls,
+                    tools=workload.tool_schemas(),
+                )
                 rec.checks = [r.to_dict() for r in results]
                 rec.checks_passed = all(r.passed for r in results)
             if self.cfg.save_outputs and rec.ok:
-                rec.output = redact(text)
+                rec.output = redact(reply.text)
+                if reply.tool_calls:
+                    rec.tool_calls = [
+                        {"name": c.name, "arguments": redact(c.arguments)[:_MAX_SAVED_ARGS]}
+                        for c in reply.tool_calls
+                    ]
             self._after(rec, state)
         finally:
             self.budget.settle(reserved, actual)

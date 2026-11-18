@@ -165,6 +165,29 @@ def markdown_report(result: RunResult) -> str:
             ),
             "",
         ]
+        detail = [s for s in summaries if s.workload == wl and f.has_detail(s)]
+        if detail:
+            kinds = sorted({k for s in detail for k in s.check_types})
+            tools = any(s.tool_call_rate is not None for s in detail)
+            headers = ["Provider", "Mode", "n"]
+            headers += ["Called a tool", "Same calls"] if tools else []
+            headers += kinds
+            rows = []
+            for s in detail:
+                row = [s.provider, s.mode, str(s.latency.n if s.latency else 0)]
+                if tools:
+                    row += [f.pct(s.tool_call_rate), f.agreement(s)]
+                row += [f.check_type(s, k) for k in kinds]
+                rows.append(row)
+            out += [
+                f"Checks{' and tool calls' if tools else ''}:",
+                "",
+                _table(headers, rows, 2),
+                "",
+            ]
+
+    if any(f.has_detail(s) for s in summaries):
+        out += [f.TOOL_LEGEND, ""]
 
     out += ["## Reliability", "", "All requests, warm-up included.", ""]
     rows = []

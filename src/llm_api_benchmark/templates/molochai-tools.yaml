@@ -1,0 +1,33 @@
+# MolochAI tool calling: one model, the four tools-v1 workloads, streamed.
+# https://molochai.dev/docs/api-reference?utm_source=github&utm_medium=oss&utm_campaign=llm-api-benchmark
+#
+#   export MOLOCHAI_API_KEY=your-api-key
+#   llm-bench run --config molochai-tools.yaml --dry-run    # shows the plan, sends nothing
+#   llm-bench run --config molochai-tools.yaml
+#
+# 4 workloads x 3 prompts x 2 repetitions + 1 warm-up = 25 requests, spaced to the documented
+# 60 requests/minute. Tools are never executed; the checks look only at the calls. The gateway
+# sends a tool call's arguments in one piece when streaming, so TTFC here is close to latency.
+# It does not apply max_tokens (each reply is capped by your plan), so the request count is what
+# bounds time and cost. List model ids with
+#   llm-bench models --preset molochai
+version: 1
+name: molochai-tools
+dataset: tools-v1
+modes: [stream]
+repetitions: 2
+warmup: 1
+concurrency: 1
+timeout_s: 120
+max_requests: 30
+providers:
+  - name: molochai-llama-70b
+    preset: molochai
+    model: llama-3.3-70b-instruct-abliterated
+    # To track cost (and to use a budget), copy the current per-token prices yourself:
+    # pricing:
+    #   input_per_mtok: 0.0     # price per 1M input tokens
+    #   output_per_mtok: 0.0    # price per 1M output tokens
+    #   currency: USD
+    #   source: https://molochai.dev/pricing?utm_source=github&utm_medium=oss&utm_campaign=llm-api-benchmark
+    #   checked_on: 2026-01-01  # the date you checked

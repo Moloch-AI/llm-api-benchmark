@@ -15,7 +15,9 @@ TEMPLATES = ROOT / "src" / "llm_api_benchmark" / "templates"
 EXAMPLES = ROOT / "benchmarks"
 
 
-@pytest.mark.parametrize("name", ["synthetic-demo", "molochai", "openai-compatible"])
+@pytest.mark.parametrize(
+    "name", ["synthetic-demo", "synthetic-tools", "molochai", "molochai-tools", "openai-compatible"]
+)
 def test_template_is_valid_and_matches_the_example(
     name: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
