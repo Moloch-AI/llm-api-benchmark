@@ -1,0 +1,28 @@
+# Offline conformance demo: the in-process reference endpoint, once as documented and once with
+# quirks that real endpoints sometimes have. No key, no network, nothing is billed. Reports from
+# this file are labeled SYNTHETIC FIXTURE DATA: they show how the suite reports each problem.
+#
+#   llm-bench conformance --config synthetic-conformance.yaml
+#
+# To test a real endpoint, point the same command at a config with that endpoint, for example
+# `llm-bench init openai-compatible` or `llm-bench init molochai`. About 20 small requests.
+version: 1
+name: synthetic-conformance
+# Used only by `llm-bench run` on this file; conformance ignores them.
+workloads: [short-answer]
+repetitions: 2
+providers:
+  - name: reference
+    preset: synthetic
+    model: reference-model
+  - name: quirky
+    preset: synthetic
+    model: reference-model
+    synthetic:
+      quirks:
+        - ignore_max_tokens
+        - ignore_response_format
+        - ignore_n
+        - bare_errors
+        - substitute_model
+        - no_stream_usage

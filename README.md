@@ -9,7 +9,9 @@
 
 `llm-bench` measures what your application would experience when it calls an LLM API. It reports
 time to first token, end-to-end latency, output tokens per second, error rates by type, cost
-from the prices you supply, and whether tool (function) calls come back well formed. Each workload is reported separately, with sample sizes, from a fixed
+from the prices you supply, and whether tool (function) calls come back well formed. A
+conformance suite checks which OpenAI parameters and behaviors an endpoint supports, and which it
+accepts but silently ignores. Each workload is reported separately, with sample sizes, from a fixed
 and versioned set of prompts. Runs are bounded before they start: a request cap, an optional USD
 budget, a dry run, and confirmation for larger runs.
 
@@ -23,6 +25,7 @@ not a load generator.
 - [Example configuration](#example-configuration)
 - [Sample output](#sample-output)
 - [Test tool calling](#test-tool-calling)
+- [OpenAI-compatible API test suite](#openai-compatible-api-test-suite)
 - [Supported providers](#supported-providers)
 - [Metrics](#metrics)
 - [Methodology](#methodology)
@@ -62,6 +65,9 @@ not a load generator.
   repetitions is reported too. Streamed calls are rebuilt from their fragments.
 - **Reports.** A terminal table, JSON, CSV (per request and per group), Markdown, and a
   self-contained HTML page with local SVG charts that loads nothing from the network.
+- **Conformance suite.** `llm-bench conformance` runs 22 tests (21 small requests) for model
+  listing, streaming, usage, parameter handling, tool calls and error bodies. It reports PASS,
+  WARN or FAIL per test, as a terminal table, JSON, Markdown and JUnit XML.
 - **Comparisons.** `llm-bench compare` gives the difference of medians with a 95% bootstrap
   interval, and says "no clear difference" when the interval includes zero.
 - **Credentials stay out.** Keys are read only from environment variables, and terminal output,
@@ -217,6 +223,40 @@ by design. Use your own tools in a dataset file (see [docs/configuration.md](doc
 to test the calls your application makes. These checks show whether calls are well formed and as
 expected on small tasks; they are not an agent benchmark.
 
+## OpenAI-compatible API test suite
+
+"OpenAI-compatible" usually means "some of it". `llm-bench conformance` finds out which parts. Its
+most useful finding is a parameter that is accepted and then ignored: a `max_tokens`, `stop`,
+`n`, `response_format` or `logprobs` that returns HTTP 200 without taking effect.
+
+```bash
+llm-bench conformance -c synthetic-conformance.yaml       # offline: a reference endpoint and a quirky one
+llm-bench conformance -c my-endpoint.yaml --formats json,md,junit
+```
+
+```text
+Test                                reference  quirky
+----------------------------------  ---------  ------
+stream.usage                        PASS       FAIL
+params.max_tokens                   PASS       FAIL
+params.n                            PASS       FAIL
+params.response_format.json_object  PASS       WARN
+params.response_format.json_schema  PASS       FAIL
+errors.invalid_key                  PASS       WARN
+errors.unknown_model                PASS       FAIL
+```
+
+That excerpt is the in-process reference endpoint, once as documented and once with quirks
+switched on. It is synthetic data, not any provider's results.
+
+- **What WARN and FAIL mean.** An explicit 400 for an unsupported parameter is a WARN; silently
+  ignoring it is a FAIL.
+- **CI.** The exit code is 1 on any FAIL, so the suite works as a gate for your own server or
+  gateway.
+
+[docs/conformance.md](docs/conformance.md) lists every test, what passes, and how to read the
+results.
+
 ## Supported providers
 
 | Preset | What it is | How it was checked |
@@ -300,6 +340,7 @@ The most used keys are below. The complete reference is
 
 | Command | What it does |
 |---|---|
+| `llm-bench conformance -c FILE` | Run the OpenAI compatibility tests against each endpoint. Options: `--list`, `--only`, `--skip`, `--providers`, `--dry-run`, `--yes`, `--formats json,md,junit`, `--fail-on fail\|warn\|never`. |
 | `llm-bench run -c FILE` | Run a benchmark. Options: `--dry-run`, `--yes`, `--out-dir`, `--formats`, `--dataset`, `--providers`, `--workloads`, `--modes`, `--repetitions`, `--warmup`, `--concurrency`, `--max-requests`, `--budget`, `--stop-at-budget`, `--quiet`. |
 | `llm-bench providers` | List presets, how each was checked, and their notes. |
 | `llm-bench datasets [NAME] [--prompts]` | List datasets, or show workloads, prompts and checks. |

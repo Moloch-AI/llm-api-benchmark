@@ -1,0 +1,45 @@
+SYNTHETIC FIXTURE DATA: at least one endpoint is the in-process reference endpoint. Its results show how the suite reports, not how any real API behaves.
+
+Test                                reference  quirky
+----------------------------------  ---------  ------
+models.list                         PASS       PASS
+chat.basic                          PASS       PASS
+chat.usage                          PASS       PASS
+stream.basic                        PASS       PASS
+stream.usage                        PASS       FAIL
+params.max_tokens                   PASS       FAIL
+params.max_completion_tokens        PASS       FAIL
+params.stop                         PASS       PASS
+params.n                            PASS       FAIL
+params.response_format.json_object  PASS       WARN
+params.response_format.json_schema  PASS       FAIL
+params.logprobs                     PASS       PASS
+params.temperature_range            PASS       PASS
+tools.call                          PASS       PASS
+tools.stream                        PASS       PASS
+tools.result                        PASS       PASS
+tools.choice_none                   PASS       PASS
+errors.invalid_key                  PASS       WARN
+errors.missing_key                  PASS       WARN
+errors.unknown_model                PASS       FAIL
+errors.invalid_request              PASS       WARN
+errors.malformed_json               PASS       WARN
+
+quirky:
+  FAIL  stream.usage: include_usage was requested but no chunk carries usage
+  FAIL  params.max_tokens: ignored: 60 completion tokens with max_tokens=8
+  FAIL  params.max_completion_tokens: ignored: 60 completion tokens with max_completion_tokens=8
+  FAIL  params.n: ignored: 1 choice(s) returned for n=2
+  WARN  params.response_format.json_object: JSON only inside a code fence: JSON mode was likely not applied
+  FAIL  params.response_format.json_schema: ignored: the reply is not JSON ('A typical house cat is small, curious and fond of ')
+  WARN  errors.invalid_key: HTTP 401, but the body is other-json: Incorrect API key provided.
+  WARN  errors.missing_key: HTTP 401, but the body is other-json: Incorrect API key provided.
+  FAIL  errors.unknown_model: HTTP 200: an unknown model was served (reply says model 'reference-model')
+  WARN  errors.invalid_request: HTTP 400, but the body is other-json: messages must be a non-empty array.
+  WARN  errors.malformed_json: HTTP 400, but the body is other-json: We could not parse the JSON body of your request.
+
+reference: 22 pass, 0 warn, 0 fail, 0 skipped, 0 error
+
+quirky: 11 pass, 5 warn, 6 fail, 0 skipped, 0 error
+
+PASS: behaves like the OpenAI API. WARN: works, with a difference worth knowing (for example an explicit 4xx for an unsupported parameter, or a non-OpenAI error body). FAIL: a difference that breaks clients, such as a parameter that is accepted and silently ignored. skip: not applicable. ERROR: could not be judged (network, rate limit, 5xx).

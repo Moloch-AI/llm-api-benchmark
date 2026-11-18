@@ -36,3 +36,18 @@ fields look like, not how any model calls tools.
 | [terminal.txt](synthetic-tools/terminal.txt) | `llm-bench run --config benchmarks/synthetic-tools.yaml --yes --quiet --formats json,csv,md,html` (stdout) |
 | [results.json](synthetic-tools/results.json), [requests.csv](synthetic-tools/requests.csv), [summary.csv](synthetic-tools/summary.csv) | the same run; see `tool_call_names` and `tool_signature` per request |
 | [report.md](synthetic-tools/report.md), [report.html](synthetic-tools/report.html) | the same run |
+
+## synthetic-conformance/: synthetic fixture data, conformance suite
+
+`llm-bench conformance --config benchmarks/synthetic-conformance.yaml --formats json,md,junit`
+runs the in-process reference endpoint twice: once as documented, and once with six quirks
+switched on (ignored `max_tokens`, `response_format` and `n`; bare error bodies; an unknown model
+served anyway; no usage in streams). **These are not results for any provider.** They show how
+each kind of problem is reported.
+
+| File | Contents |
+|---|---|
+| [terminal.txt](synthetic-conformance/terminal.txt) | stdout: the matrix and the reasons for each WARN and FAIL |
+| [results.json](synthetic-conformance/results.json) | every test's outcome, summary, notes, status and latency |
+| [report.md](synthetic-conformance/report.md) | the Markdown report |
+| [results.junit.xml](synthetic-conformance/results.junit.xml) | JUnit XML for CI |

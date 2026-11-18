@@ -1,0 +1,732 @@
+{
+  "schema": "llm-api-benchmark/conformance/v1",
+  "tool": {
+    "name": "llm-api-benchmark",
+    "version": "0.1.0"
+  },
+  "synthetic": true,
+  "environment": {
+    "python": "3.12.4",
+    "implementation": "cpython",
+    "platform": "Windows-10",
+    "httpx": "0.28.1",
+    "tool_version": "0.1.0"
+  },
+  "tests": [
+    {
+      "id": "models.list",
+      "category": "discovery",
+      "title": "GET /models lists models"
+    },
+    {
+      "id": "chat.basic",
+      "category": "chat",
+      "title": "A plain chat completion has the standard shape"
+    },
+    {
+      "id": "chat.usage",
+      "category": "chat",
+      "title": "usage has prompt, completion and total tokens"
+    },
+    {
+      "id": "stream.basic",
+      "category": "streaming",
+      "title": "SSE chunks, finish_reason and [DONE]"
+    },
+    {
+      "id": "stream.usage",
+      "category": "streaming",
+      "title": "stream_options.include_usage sends usage"
+    },
+    {
+      "id": "params.max_tokens",
+      "category": "parameters",
+      "title": "max_tokens limits the reply"
+    },
+    {
+      "id": "params.max_completion_tokens",
+      "category": "parameters",
+      "title": "max_completion_tokens limits the reply"
+    },
+    {
+      "id": "params.stop",
+      "category": "parameters",
+      "title": "stop ends the reply at the sequence"
+    },
+    {
+      "id": "params.n",
+      "category": "parameters",
+      "title": "n=2 returns two choices"
+    },
+    {
+      "id": "params.response_format.json_object",
+      "category": "parameters",
+      "title": "JSON mode returns a bare JSON object"
+    },
+    {
+      "id": "params.response_format.json_schema",
+      "category": "parameters",
+      "title": "Structured output follows a JSON schema"
+    },
+    {
+      "id": "params.logprobs",
+      "category": "parameters",
+      "title": "logprobs are returned"
+    },
+    {
+      "id": "params.temperature_range",
+      "category": "parameters",
+      "title": "An out-of-range temperature is rejected"
+    },
+    {
+      "id": "tools.call",
+      "category": "tools",
+      "title": "A forced tool call has the standard shape"
+    },
+    {
+      "id": "tools.stream",
+      "category": "tools",
+      "title": "Streamed tool-call deltas rebuild a valid call"
+    },
+    {
+      "id": "tools.result",
+      "category": "tools",
+      "title": "A tool result message is accepted and used"
+    },
+    {
+      "id": "tools.choice_none",
+      "category": "tools",
+      "title": "tool_choice \"none\" prevents calls"
+    },
+    {
+      "id": "errors.invalid_key",
+      "category": "errors",
+      "title": "An invalid key gets 401 with an error body"
+    },
+    {
+      "id": "errors.missing_key",
+      "category": "errors",
+      "title": "A missing key gets 401 with an error body"
+    },
+    {
+      "id": "errors.unknown_model",
+      "category": "errors",
+      "title": "An unknown model is an error, not a substitute"
+    },
+    {
+      "id": "errors.invalid_request",
+      "category": "errors",
+      "title": "An empty messages list gets 400 or 422"
+    },
+    {
+      "id": "errors.malformed_json",
+      "category": "errors",
+      "title": "A malformed JSON body gets 400, not a 5xx"
+    }
+  ],
+  "reports": [
+    {
+      "provider": {
+        "name": "reference",
+        "preset": "synthetic",
+        "api": "synthetic",
+        "base_url": "synthetic://local",
+        "model": "reference-model",
+        "api_key_env": null,
+        "auth_scheme": "none",
+        "headers": [],
+        "params": {},
+        "pricing": null,
+        "rate_limit_rpm": null,
+        "timeout_s": null,
+        "max_tokens_param": "max_tokens",
+        "max_tokens_honored": true,
+        "assumed_max_output_tokens": null,
+        "stream_usage": true,
+        "notes": [
+          "Synthetic fixture data: not the performance of any real API."
+        ],
+        "synthetic": {
+          "quirks": [],
+          "ttft_ms": 350.0,
+          "tokens_per_s": 60.0,
+          "jitter": 0.25,
+          "error_rate": 0.0,
+          "output_tokens": 120,
+          "time_scale": 1.0
+        }
+      },
+      "started_at": "2026-11-18T11:09:45+00:00",
+      "finished_at": "2026-11-18T11:09:45+00:00",
+      "counts": {
+        "pass": 22,
+        "warn": 0,
+        "fail": 0,
+        "skip": 0,
+        "error": 0
+      },
+      "headers_seen": [],
+      "stopped": null,
+      "results": [
+        {
+          "id": "models.list",
+          "category": "discovery",
+          "title": "GET /models lists models",
+          "outcome": "pass",
+          "summary": "1 model(s) listed",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "chat.basic",
+          "category": "chat",
+          "title": "A plain chat completion has the standard shape",
+          "outcome": "pass",
+          "summary": "answered 'ready'",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "chat.usage",
+          "category": "chat",
+          "title": "usage has prompt, completion and total tokens",
+          "outcome": "pass",
+          "summary": "prompt 14, completion 1, total 15",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 0
+        },
+        {
+          "id": "stream.basic",
+          "category": "streaming",
+          "title": "SSE chunks, finish_reason and [DONE]",
+          "outcome": "pass",
+          "summary": "3 chunks, answered 'ready'",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "stream.usage",
+          "category": "streaming",
+          "title": "stream_options.include_usage sends usage",
+          "outcome": "pass",
+          "summary": "final usage chunk: prompt 9, completion 1, total 10",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "params.max_tokens",
+          "category": "parameters",
+          "title": "max_tokens limits the reply",
+          "outcome": "pass",
+          "summary": "8 completion tokens (limit 8)",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "params.max_completion_tokens",
+          "category": "parameters",
+          "title": "max_completion_tokens limits the reply",
+          "outcome": "pass",
+          "summary": "8 completion tokens (limit 8)",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "params.stop",
+          "category": "parameters",
+          "title": "stop ends the reply at the sequence",
+          "outcome": "pass",
+          "summary": "stopped before '7' ('1 2 3 4 5 6')",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "params.n",
+          "category": "parameters",
+          "title": "n=2 returns two choices",
+          "outcome": "pass",
+          "summary": "two choices returned",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "params.response_format.json_object",
+          "category": "parameters",
+          "title": "JSON mode returns a bare JSON object",
+          "outcome": "pass",
+          "summary": "the reply is a bare JSON object",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "params.response_format.json_schema",
+          "category": "parameters",
+          "title": "Structured output follows a JSON schema",
+          "outcome": "pass",
+          "summary": "the reply matches the schema",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "params.logprobs",
+          "category": "parameters",
+          "title": "logprobs are returned",
+          "outcome": "pass",
+          "summary": "logprobs for 1 token(s)",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "params.temperature_range",
+          "category": "parameters",
+          "title": "An out-of-range temperature is rejected",
+          "outcome": "pass",
+          "summary": "rejected with HTTP 400 (temperature must be between 0 and 2.)",
+          "details": [],
+          "http_status": 400,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "tools.call",
+          "category": "tools",
+          "title": "A forced tool call has the standard shape",
+          "outcome": "pass",
+          "summary": "get_weather({\"city\": \"Paris\", \"unit\": \"celsius\"})",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "tools.stream",
+          "category": "tools",
+          "title": "Streamed tool-call deltas rebuild a valid call",
+          "outcome": "pass",
+          "summary": "get_weather({\"city\": \"Paris\", \"unit\": \"celsius\"}) rebuilt from deltas",
+          "details": [
+            "arguments arrived in 5 fragments"
+          ],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "tools.result",
+          "category": "tools",
+          "title": "A tool result message is accepted and used",
+          "outcome": "pass",
+          "summary": "answered from the tool result ('It is 18 degrees in Paris right now.')",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "tools.choice_none",
+          "category": "tools",
+          "title": "tool_choice \"none\" prevents calls",
+          "outcome": "pass",
+          "summary": "answered in text",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "errors.invalid_key",
+          "category": "errors",
+          "title": "An invalid key gets 401 with an error body",
+          "outcome": "pass",
+          "summary": "HTTP 401 with an OpenAI error body (Incorrect API key provided.)",
+          "details": [],
+          "http_status": 401,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "errors.missing_key",
+          "category": "errors",
+          "title": "A missing key gets 401 with an error body",
+          "outcome": "pass",
+          "summary": "HTTP 401 with an OpenAI error body (Incorrect API key provided.)",
+          "details": [],
+          "http_status": 401,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "errors.unknown_model",
+          "category": "errors",
+          "title": "An unknown model is an error, not a substitute",
+          "outcome": "pass",
+          "summary": "HTTP 404 with an OpenAI error body (The model `conformance-check-unknown-model` does not exist.)",
+          "details": [],
+          "http_status": 404,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "errors.invalid_request",
+          "category": "errors",
+          "title": "An empty messages list gets 400 or 422",
+          "outcome": "pass",
+          "summary": "HTTP 400 with an OpenAI error body (messages must be a non-empty array.)",
+          "details": [],
+          "http_status": 400,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "errors.malformed_json",
+          "category": "errors",
+          "title": "A malformed JSON body gets 400, not a 5xx",
+          "outcome": "pass",
+          "summary": "HTTP 400 with an OpenAI error body (We could not parse the JSON body of your request.)",
+          "details": [],
+          "http_status": 400,
+          "latency_s": 0.0,
+          "requests": 1
+        }
+      ]
+    },
+    {
+      "provider": {
+        "name": "quirky",
+        "preset": "synthetic",
+        "api": "synthetic",
+        "base_url": "synthetic://local",
+        "model": "reference-model",
+        "api_key_env": null,
+        "auth_scheme": "none",
+        "headers": [],
+        "params": {},
+        "pricing": null,
+        "rate_limit_rpm": null,
+        "timeout_s": null,
+        "max_tokens_param": "max_tokens",
+        "max_tokens_honored": true,
+        "assumed_max_output_tokens": null,
+        "stream_usage": true,
+        "notes": [
+          "Synthetic fixture data: not the performance of any real API."
+        ],
+        "synthetic": {
+          "quirks": [
+            "ignore_max_tokens",
+            "ignore_response_format",
+            "ignore_n",
+            "bare_errors",
+            "substitute_model",
+            "no_stream_usage"
+          ],
+          "ttft_ms": 350.0,
+          "tokens_per_s": 60.0,
+          "jitter": 0.25,
+          "error_rate": 0.0,
+          "output_tokens": 120,
+          "time_scale": 1.0
+        }
+      },
+      "started_at": "2026-11-18T11:09:45+00:00",
+      "finished_at": "2026-11-18T11:09:45+00:00",
+      "counts": {
+        "pass": 11,
+        "warn": 5,
+        "fail": 6,
+        "skip": 0,
+        "error": 0
+      },
+      "headers_seen": [],
+      "stopped": null,
+      "results": [
+        {
+          "id": "models.list",
+          "category": "discovery",
+          "title": "GET /models lists models",
+          "outcome": "pass",
+          "summary": "1 model(s) listed",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "chat.basic",
+          "category": "chat",
+          "title": "A plain chat completion has the standard shape",
+          "outcome": "pass",
+          "summary": "answered 'ready'",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "chat.usage",
+          "category": "chat",
+          "title": "usage has prompt, completion and total tokens",
+          "outcome": "pass",
+          "summary": "prompt 14, completion 1, total 15",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 0
+        },
+        {
+          "id": "stream.basic",
+          "category": "streaming",
+          "title": "SSE chunks, finish_reason and [DONE]",
+          "outcome": "pass",
+          "summary": "3 chunks, answered 'ready'",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "stream.usage",
+          "category": "streaming",
+          "title": "stream_options.include_usage sends usage",
+          "outcome": "fail",
+          "summary": "include_usage was requested but no chunk carries usage",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "params.max_tokens",
+          "category": "parameters",
+          "title": "max_tokens limits the reply",
+          "outcome": "fail",
+          "summary": "ignored: 60 completion tokens with max_tokens=8",
+          "details": [
+            "finish_reason 'stop'"
+          ],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "params.max_completion_tokens",
+          "category": "parameters",
+          "title": "max_completion_tokens limits the reply",
+          "outcome": "fail",
+          "summary": "ignored: 60 completion tokens with max_completion_tokens=8",
+          "details": [
+            "finish_reason 'stop'"
+          ],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "params.stop",
+          "category": "parameters",
+          "title": "stop ends the reply at the sequence",
+          "outcome": "pass",
+          "summary": "stopped before '7' ('1 2 3 4 5 6')",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "params.n",
+          "category": "parameters",
+          "title": "n=2 returns two choices",
+          "outcome": "fail",
+          "summary": "ignored: 1 choice(s) returned for n=2",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "params.response_format.json_object",
+          "category": "parameters",
+          "title": "JSON mode returns a bare JSON object",
+          "outcome": "warn",
+          "summary": "JSON only inside a code fence: JSON mode was likely not applied",
+          "details": [
+            "The prompt asks for JSON, so a reply can look right without JSON mode."
+          ],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "params.response_format.json_schema",
+          "category": "parameters",
+          "title": "Structured output follows a JSON schema",
+          "outcome": "fail",
+          "summary": "ignored: the reply is not JSON ('A typical house cat is small, curious and fond of ')",
+          "details": [
+            "The prompt does not mention JSON, so only the schema could make the reply JSON."
+          ],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "params.logprobs",
+          "category": "parameters",
+          "title": "logprobs are returned",
+          "outcome": "pass",
+          "summary": "logprobs for 1 token(s)",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "params.temperature_range",
+          "category": "parameters",
+          "title": "An out-of-range temperature is rejected",
+          "outcome": "pass",
+          "summary": "rejected with HTTP 400 (temperature must be between 0 and 2.)",
+          "details": [],
+          "http_status": 400,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "tools.call",
+          "category": "tools",
+          "title": "A forced tool call has the standard shape",
+          "outcome": "pass",
+          "summary": "get_weather({\"city\": \"Paris\", \"unit\": \"celsius\"})",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.016,
+          "requests": 1
+        },
+        {
+          "id": "tools.stream",
+          "category": "tools",
+          "title": "Streamed tool-call deltas rebuild a valid call",
+          "outcome": "pass",
+          "summary": "get_weather({\"city\": \"Paris\", \"unit\": \"celsius\"}) rebuilt from deltas",
+          "details": [
+            "arguments arrived in 5 fragments"
+          ],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "tools.result",
+          "category": "tools",
+          "title": "A tool result message is accepted and used",
+          "outcome": "pass",
+          "summary": "answered from the tool result ('It is 18 degrees in Paris right now.')",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "tools.choice_none",
+          "category": "tools",
+          "title": "tool_choice \"none\" prevents calls",
+          "outcome": "pass",
+          "summary": "answered in text",
+          "details": [],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "errors.invalid_key",
+          "category": "errors",
+          "title": "An invalid key gets 401 with an error body",
+          "outcome": "warn",
+          "summary": "HTTP 401, but the body is other-json: Incorrect API key provided.",
+          "details": [
+            "OpenAI clients read {\"error\": {\"message\", \"type\", \"code\"}}; other shapes lose detail"
+          ],
+          "http_status": 401,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "errors.missing_key",
+          "category": "errors",
+          "title": "A missing key gets 401 with an error body",
+          "outcome": "warn",
+          "summary": "HTTP 401, but the body is other-json: Incorrect API key provided.",
+          "details": [
+            "OpenAI clients read {\"error\": {\"message\", \"type\", \"code\"}}; other shapes lose detail"
+          ],
+          "http_status": 401,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "errors.unknown_model",
+          "category": "errors",
+          "title": "An unknown model is an error, not a substitute",
+          "outcome": "fail",
+          "summary": "HTTP 200: an unknown model was served (reply says model 'reference-model')",
+          "details": [
+            "A typo in a model id should fail, not run on another model."
+          ],
+          "http_status": 200,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "errors.invalid_request",
+          "category": "errors",
+          "title": "An empty messages list gets 400 or 422",
+          "outcome": "warn",
+          "summary": "HTTP 400, but the body is other-json: messages must be a non-empty array.",
+          "details": [
+            "OpenAI clients read {\"error\": {\"message\", \"type\", \"code\"}}; other shapes lose detail"
+          ],
+          "http_status": 400,
+          "latency_s": 0.0,
+          "requests": 1
+        },
+        {
+          "id": "errors.malformed_json",
+          "category": "errors",
+          "title": "A malformed JSON body gets 400, not a 5xx",
+          "outcome": "warn",
+          "summary": "HTTP 400, but the body is other-json: We could not parse the JSON body of your request.",
+          "details": [
+            "OpenAI clients read {\"error\": {\"message\", \"type\", \"code\"}}; other shapes lose detail"
+          ],
+          "http_status": 400,
+          "latency_s": 0.0,
+          "requests": 1
+        }
+      ]
+    }
+  ]
+}

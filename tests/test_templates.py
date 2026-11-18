@@ -16,7 +16,15 @@ EXAMPLES = ROOT / "benchmarks"
 
 
 @pytest.mark.parametrize(
-    "name", ["synthetic-demo", "synthetic-tools", "molochai", "molochai-tools", "openai-compatible"]
+    "name",
+    [
+        "synthetic-demo",
+        "synthetic-tools",
+        "synthetic-conformance",
+        "molochai",
+        "molochai-tools",
+        "openai-compatible",
+    ],
 )
 def test_template_is_valid_and_matches_the_example(
     name: str, monkeypatch: pytest.MonkeyPatch
