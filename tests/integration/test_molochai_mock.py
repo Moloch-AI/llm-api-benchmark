@@ -18,6 +18,7 @@ from pathlib import Path
 
 import pytest
 
+from llm_api_benchmark import conformance as conf
 from llm_api_benchmark.cli import main
 from llm_api_benchmark.config import parse_config
 from llm_api_benchmark.datasets import load_dataset, parse_dataset
@@ -174,3 +175,43 @@ def test_tool_calls_arrive_whole_and_are_recorded() -> None:
     stream = [r for r in records if r.mode == "stream"]
     assert all(r.ttfc_s is not None and r.text_chunks == 1 for r in stream)
     assert len({r.tool_signature for r in records}) == 1
+
+
+def test_conformance_against_the_mock_matches_the_documented_gateway() -> None:
+    """The mock mirrors the documented gateway: ignored parameters fail, 422s are not OpenAI-shaped.
+
+    Only outcomes that follow from the documented contract are asserted. The mock accepts any key
+    and calls the first tool whenever tools are sent, so those tests are not asserted here.
+    """
+    cfg = parse_config(
+        {
+            "name": "mock-conformance",
+            "providers": [
+                {
+                    "name": "moloch",
+                    "preset": "molochai",
+                    "model": "llama-3.3-70b-instruct-abliterated",
+                    "rate_limit_rpm": 600,
+                }
+            ],
+        }
+    )
+    report = asyncio.run(
+        conf.run_provider(cfg.providers[0], list(conf.TESTS), timeout_s=30, connect_timeout_s=5)
+    )
+    got = {r.id: r.outcome for r in report.results}
+    assert got["models.list"] == conf.PASS
+    assert got["chat.basic"] == got["chat.usage"] == conf.PASS
+    assert got["stream.basic"] == got["stream.usage"] == conf.PASS  # usage is always sent
+    for ignored in (
+        "params.max_tokens",
+        "params.stop",
+        "params.n",
+        "params.response_format.json_schema",
+        "params.logprobs",
+    ):
+        assert got[ignored] == conf.FAIL, ignored
+    assert got["params.temperature_range"] == conf.PASS  # 422
+    assert got["tools.call"] == got["tools.stream"] == conf.PASS
+    assert got["errors.unknown_model"] == conf.WARN  # 422 with {"message", "errors"}
+    assert got["errors.missing_key"] == conf.WARN  # 401 {"message": "Unauthenticated."}

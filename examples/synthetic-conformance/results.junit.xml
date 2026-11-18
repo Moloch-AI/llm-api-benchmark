@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="llm-bench conformance">
+  <testsuite name="conformance.reference" tests="22" failures="0" errors="0" skipped="0" timestamp="2026-11-18T11:09:45+00:00">
+    <testcase classname="reference.discovery" name="models.list" time="0.000" />
+    <testcase classname="reference.chat" name="chat.basic" time="0.000" />
+    <testcase classname="reference.chat" name="chat.usage" time="0.000" />
+    <testcase classname="reference.streaming" name="stream.basic" time="0.000" />
+    <testcase classname="reference.streaming" name="stream.usage" time="0.000" />
+    <testcase classname="reference.parameters" name="params.max_tokens" time="0.000" />
+    <testcase classname="reference.parameters" name="params.max_completion_tokens" time="0.000" />
+    <testcase classname="reference.parameters" name="params.stop" time="0.000" />
+    <testcase classname="reference.parameters" name="params.n" time="0.000" />
+    <testcase classname="reference.parameters" name="params.response_format.json_object" time="0.000" />
+    <testcase classname="reference.parameters" name="params.response_format.json_schema" time="0.000" />
+    <testcase classname="reference.parameters" name="params.logprobs" time="0.000" />
+    <testcase classname="reference.parameters" name="params.temperature_range" time="0.000" />
+    <testcase classname="reference.tools" name="tools.call" time="0.000" />
+    <testcase classname="reference.tools" name="tools.stream" time="0.000" />
+    <testcase classname="reference.tools" name="tools.result" time="0.000" />
+    <testcase classname="reference.tools" name="tools.choice_none" time="0.000" />
+    <testcase classname="reference.errors" name="errors.invalid_key" time="0.000" />
+    <testcase classname="reference.errors" name="errors.missing_key" time="0.000" />
+    <testcase classname="reference.errors" name="errors.unknown_model" time="0.000" />
+    <testcase classname="reference.errors" name="errors.invalid_request" time="0.000" />
+    <testcase classname="reference.errors" name="errors.malformed_json" time="0.000" />
+  </testsuite>
+  <testsuite name="conformance.quirky" tests="22" failures="6" errors="0" skipped="0" timestamp="2026-11-18T11:09:45+00:00">
+    <testcase classname="quirky.discovery" name="models.list" time="0.000" />
+    <testcase classname="quirky.chat" name="chat.basic" time="0.000" />
+    <testcase classname="quirky.chat" name="chat.usage" time="0.000" />
+    <testcase classname="quirky.streaming" name="stream.basic" time="0.000" />
+    <testcase classname="quirky.streaming" name="stream.usage" time="0.000">
+      <failure message="include_usage was requested but no chunk carries usage">include_usage was requested but no chunk carries usage</failure>
+    </testcase>
+    <testcase classname="quirky.parameters" name="params.max_tokens" time="0.000">
+      <failure message="ignored: 60 completion tokens with max_tokens=8">ignored: 60 completion tokens with max_tokens=8
+finish_reason 'stop'</failure>
+    </testcase>
+    <testcase classname="quirky.parameters" name="params.max_completion_tokens" time="0.000">
+      <failure message="ignored: 60 completion tokens with max_completion_tokens=8">ignored: 60 completion tokens with max_completion_tokens=8
+finish_reason 'stop'</failure>
+    </testcase>
+    <testcase classname="quirky.parameters" name="params.stop" time="0.000" />
+    <testcase classname="quirky.parameters" name="params.n" time="0.000">
+      <failure message="ignored: 1 choice(s) returned for n=2">ignored: 1 choice(s) returned for n=2</failure>
+    </testcase>
+    <testcase classname="quirky.parameters" name="params.response_format.json_object" time="0.000">
+      <system-out>WARN: JSON only inside a code fence: JSON mode was likely not applied
+The prompt asks for JSON, so a reply can look right without JSON mode.</system-out>
+    </testcase>
+    <testcase classname="quirky.parameters" name="params.response_format.json_schema" time="0.000">
+      <failure message="ignored: the reply is not JSON ('A typical house cat is small, curious and fond of ')">ignored: the reply is not JSON ('A typical house cat is small, curious and fond of ')
+The prompt does not mention JSON, so only the schema could make the reply JSON.</failure>
+    </testcase>
+    <testcase classname="quirky.parameters" name="params.logprobs" time="0.000" />
+    <testcase classname="quirky.parameters" name="params.temperature_range" time="0.000" />
+    <testcase classname="quirky.tools" name="tools.call" time="0.016" />
+    <testcase classname="quirky.tools" name="tools.stream" time="0.000" />
+    <testcase classname="quirky.tools" name="tools.result" time="0.000" />
+    <testcase classname="quirky.tools" name="tools.choice_none" time="0.000" />
+    <testcase classname="quirky.errors" name="errors.invalid_key" time="0.000">
+      <system-out>WARN: HTTP 401, but the body is other-json: Incorrect API key provided.
+OpenAI clients read {"error": {"message", "type", "code"}}; other shapes lose detail</system-out>
+    </testcase>
+    <testcase classname="quirky.errors" name="errors.missing_key" time="0.000">
+      <system-out>WARN: HTTP 401, but the body is other-json: Incorrect API key provided.
+OpenAI clients read {"error": {"message", "type", "code"}}; other shapes lose detail</system-out>
+    </testcase>
+    <testcase classname="quirky.errors" name="errors.unknown_model" time="0.000">
+      <failure message="HTTP 200: an unknown model was served (reply says model 'reference-model')">HTTP 200: an unknown model was served (reply says model 'reference-model')
+A typo in a model id should fail, not run on another model.</failure>
+    </testcase>
+    <testcase classname="quirky.errors" name="errors.invalid_request" time="0.000">
+      <system-out>WARN: HTTP 400, but the body is other-json: messages must be a non-empty array.
+OpenAI clients read {"error": {"message", "type", "code"}}; other shapes lose detail</system-out>
+    </testcase>
+    <testcase classname="quirky.errors" name="errors.malformed_json" time="0.000">
+      <system-out>WARN: HTTP 400, but the body is other-json: We could not parse the JSON body of your request.
+OpenAI clients read {"error": {"message", "type", "code"}}; other shapes lose detail</system-out>
+    </testcase>
+  </testsuite>
+</testsuites>

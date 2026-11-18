@@ -64,6 +64,28 @@ class Pricing:
         }
 
 
+# Ways the in-process reference endpoint (used by `llm-bench conformance` with preset: synthetic)
+# can be told to misbehave, so the suite's detection can be demonstrated and tested.
+REFERENCE_QUIRKS: dict[str, str] = {
+    "models_missing": "GET /models answers 404",
+    "bare_errors": 'error bodies are {"message": ...} instead of {"error": {...}}',
+    "accept_any_key": "any key, or none, is accepted",
+    "substitute_model": "an unknown model id is served by the configured model",
+    "accept_empty_messages": "an empty messages list gets a reply",
+    "server_error_on_bad_json": "a malformed JSON body gets HTTP 500",
+    "accept_out_of_range": "a temperature outside 0 to 2 is accepted",
+    "ignore_max_tokens": "max_tokens and max_completion_tokens are ignored",
+    "ignore_stop": "stop is ignored",
+    "ignore_n": "n is ignored",
+    "ignore_response_format": "response_format is ignored",
+    "ignore_logprobs": "logprobs is ignored",
+    "ignore_tool_choice": 'tool_choice "none" is ignored',
+    "tool_args_object": "tool-call arguments are sent as a JSON object instead of a string",
+    "no_stream_usage": "streams never carry usage",
+    "no_done": "streams end without data: [DONE]",
+}
+
+
 @dataclass(frozen=True)
 class SyntheticProfile:
     """Parameters of the in-process synthetic endpoint used for demos and tests."""
@@ -74,9 +96,11 @@ class SyntheticProfile:
     error_rate: float = 0.0
     output_tokens: int = 120
     time_scale: float = 1.0
+    quirks: tuple[str, ...] = ()  # conformance only; see REFERENCE_QUIRKS
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            "quirks": list(self.quirks),
             "ttft_ms": self.ttft_ms,
             "tokens_per_s": self.tokens_per_s,
             "jitter": self.jitter,
@@ -277,7 +301,15 @@ _PROVIDER_KEYS = {
     "synthetic",
 }
 _PRICING_KEYS = {"input_per_mtok", "output_per_mtok", "currency", "source", "checked_on"}
-_SYNTHETIC_KEYS = {"ttft_ms", "tokens_per_s", "jitter", "error_rate", "output_tokens", "time_scale"}
+_SYNTHETIC_KEYS = {
+    "ttft_ms",
+    "tokens_per_s",
+    "jitter",
+    "error_rate",
+    "output_tokens",
+    "time_scale",
+    "quirks",
+}
 # Headers that would carry credentials must come from headers_env, never from the file.
 _SECRET_HEADER = re.compile(r"(?i)^(authorization|proxy-authorization|x-api-key|api-key|cookie)$")
 _ENV_REF = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}")
@@ -692,7 +724,12 @@ def _parse_synthetic(c: _Checker, value: Any, path: str) -> SyntheticProfile:
     raw = c.mapping(value, path)
     c.keys(raw, _SYNTHETIC_KEYS, path)
     d = SyntheticProfile()
+    quirks = c.str_list(raw.get("quirks"), f"{path}.quirks") or []
+    for q in quirks:
+        if q not in REFERENCE_QUIRKS:
+            c.error(f"{path}.quirks", f"unknown quirk '{q}' (known: {', '.join(REFERENCE_QUIRKS)})")
     return SyntheticProfile(
+        quirks=tuple(quirks),
         ttft_ms=_default(
             c.number(raw.get("ttft_ms"), f"{path}.ttft_ms", minimum=0, maximum=60_000), d.ttft_ms
         ),

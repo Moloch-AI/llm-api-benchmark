@@ -13,6 +13,7 @@ from typing import Any
 
 import httpx
 
+from . import conformance as conf
 from ._version import __version__
 from .config import (
     MAX_CONCURRENCY,
@@ -38,10 +39,12 @@ from .reports import (
     render_table,
     terminal_report,
 )
+from .reports import conformance as conf_reports
 from .results import (
     ResultsError,
     RunResult,
     build_result,
+    environment,
     load_results,
     requests_csv,
     summary_csv,
@@ -52,7 +55,14 @@ from .runner import Plan, Runner, build_plan, missing_keys
 # Runs that send more than this many real requests ask for confirmation (or --yes).
 CONFIRM_ABOVE = 20
 FORMATS = ("json", "csv", "md", "html")
-TEMPLATES = ("synthetic-demo", "synthetic-tools", "molochai", "molochai-tools", "openai-compatible")
+TEMPLATES = (
+    "synthetic-demo",
+    "synthetic-tools",
+    "synthetic-conformance",
+    "molochai",
+    "molochai-tools",
+    "openai-compatible",
+)
 
 
 class CliError(Exception):
@@ -423,7 +433,148 @@ def cmd_models(a: argparse.Namespace) -> int:
     return 0
 
 
+# --------------------------------------------------------------------------- conformance
+
+
+def _names(value: str | None) -> list[str]:
+    return [v.strip() for v in (value or "").split(",") if v.strip()]
+
+
+def cmd_conformance(a: argparse.Namespace) -> int:
+    if a.list:
+        rows = [[t.id, t.category, t.title, str(t.requests)] for t in conf.TESTS]
+        print(render_table(["Test", "Category", "What it checks", "Requests"], rows, right={3}))
+        print("\nSelect with --only/--skip by test id or category: " + ", ".join(conf.CATEGORIES))
+        return 0
+    if not a.config:
+        raise CliError("conformance needs --config FILE (or --list to see the tests)")
+    try:
+        cfg = load_config(a.config)
+    except ConfigError as e:
+        raise CliError(f"{a.config} is not valid:\n  " + "\n  ".join(e.problems)) from e
+    providers = list(cfg.providers)
+    if a.providers:
+        known = {p.name: p for p in providers}
+        wanted = _names(a.providers)
+        unknown = [n for n in wanted if n not in known]
+        if unknown:
+            raise CliError(
+                f"--providers: {', '.join(unknown)} not in the config (known: {', '.join(known)})"
+            )
+        providers = [known[n] for n in wanted]
+    try:
+        tests = conf.select_tests(_names(a.only), _names(a.skip))
+    except ValueError as e:
+        raise CliError(str(e)) from e
+    if not tests:
+        raise CliError("no tests selected")
+
+    err(f"Conformance: {len(tests)} test(s) from {a.config}")
+    missing = []
+    for p in providers:
+        n = conf.planned_requests(p, tests)
+        if p.is_synthetic:
+            key = "in-process reference endpoint, no key"
+        elif not p.needs_key:
+            key = "no auth"
+        else:
+            key = f"key {p.api_key_env}: " + ("set" if p.api_key() else "NOT SET")
+            if not p.api_key():
+                missing.append(f"{p.name}: set {p.api_key_env}")
+        err(f"  {p.name}: {p.model} at {p.base_url} ({key}) - {n} requests")
+        quirks = p.synthetic.quirks if p.synthetic else ()
+        if quirks:
+            err(f"    quirks: {', '.join(quirks)}")
+    if a.dry_run:
+        for m in missing:
+            err(f"  Missing      {m}")
+        err("\nDry run: nothing was sent.")
+        return 0
+    if missing:
+        raise CliError("Not started:\n  " + "\n  ".join(missing))
+    real = sum(conf.planned_requests(p, tests) for p in providers if not p.is_synthetic)
+    _confirm(real, a.yes)
+    err("")
+
+    def progress(name: str) -> Any:
+        if a.quiet:
+            return None
+        return lambda r: err(
+            f"  {name:<16} {conf_reports.LABEL[r.outcome]:5} {r.id}  {r.summary[:90]}"
+        )
+
+    async def go() -> list[conf.ProviderReport]:
+        return [
+            await conf.run_provider(
+                p,
+                tests,
+                timeout_s=p.timeout_s or cfg.timeout_s,
+                connect_timeout_s=cfg.connect_timeout_s,
+                progress=progress(p.name),
+            )
+            for p in providers
+        ]
+
+    reports = asyncio.run(go())
+    env = environment() | {"tool_version": __version__}
+    result = conf.ConformanceResult(reports, env, any(p.is_synthetic for p in providers))
+    out_dir = Path(a.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    base = out_dir / f"conformance-{cfg.name}-{stamp}"
+    renderers = {
+        "json": (".json", conf_reports.conformance_json),
+        "md": (".md", conf_reports.conformance_markdown),
+        "junit": (".junit.xml", conf_reports.conformance_junit),
+    }
+    formats = list(dict.fromkeys(["json", *_names(a.formats)]))
+    bad = [f for f in formats if f not in renderers]
+    if bad:
+        raise CliError(f"--formats: unknown {', '.join(bad)} (choose from json, md, junit)")
+    written = []
+    for fmt in formats:
+        suffix, render = renderers[fmt]
+        path = base.with_name(base.name + suffix)
+        path.write_text(render(result), encoding="utf-8", newline="\n")
+        written.append(path)
+    print(conf_reports.conformance_table(result), end="")
+    for path in written:
+        err(f"Wrote {path}")
+    outcomes = {t.outcome for rep in reports for t in rep.results}
+    if a.fail_on == "never":
+        return 0
+    if conf.FAIL in outcomes or (a.fail_on == "warn" and conf.WARN in outcomes):
+        return 1
+    return 0
+
+
+def _conformance_report(path: str, fmt: str) -> str | None:
+    """Render a conformance results file, or None when the file is a benchmark result."""
+    try:
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(data, dict) or data.get("schema") != conf.SCHEMA:
+        return None
+    result = conf.ConformanceResult.from_dict(data)
+    renderers = {
+        "table": conf_reports.conformance_table,
+        "markdown": conf_reports.conformance_markdown,
+        "junit": conf_reports.conformance_junit,
+        "json": conf_reports.conformance_json,
+    }
+    if fmt not in renderers:
+        raise CliError(f"a conformance result renders as {', '.join(renderers)}, not {fmt}")
+    return renderers[fmt](result)
+
+
 def cmd_report(a: argparse.Namespace) -> int:
+    conformance_text = _conformance_report(a.results, a.format)
+    if conformance_text is not None:
+        _emit(conformance_text, a.output)
+        return 0
+    if a.format == "junit":
+        raise CliError("junit is only available for conformance results")
     result = _load(a.results)
     renderers = {
         "table": terminal_report,
@@ -551,7 +702,7 @@ def build_parser() -> argparse.ArgumentParser:
         "-f",
         "--format",
         default="table",
-        choices=["table", "markdown", "html", "csv", "requests-csv", "json"],
+        choices=["table", "markdown", "html", "csv", "requests-csv", "json", "junit"],
     )
     rep.add_argument("-o", "--output", help="write to a file instead of stdout")
     rep.set_defaults(fn=cmd_report)
@@ -567,6 +718,35 @@ def build_parser() -> argparse.ArgumentParser:
     cmp_.add_argument("-f", "--format", default="table", choices=["table", "markdown", "json"])
     cmp_.add_argument("-o", "--output")
     cmp_.set_defaults(fn=cmd_compare)
+
+    cf = sub.add_parser(
+        "conformance",
+        help="test endpoints against the OpenAI Chat Completions behavior (about 20 small requests)",
+    )
+    cf.add_argument("-c", "--config", help="YAML or JSON configuration file (its providers)")
+    cf.add_argument("--list", action="store_true", help="list the tests and exit")
+    cf.add_argument("--providers", help="only these endpoint names (comma-separated)")
+    cf.add_argument("--only", help="only these test ids or categories (comma-separated)")
+    cf.add_argument("--skip", help="skip these test ids or categories (comma-separated)")
+    cf.add_argument("--dry-run", action="store_true", help="show what would run; send nothing")
+    cf.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help=f"do not ask before sending more than {CONFIRM_ABOVE} requests",
+    )
+    cf.add_argument("-o", "--out-dir", default="results", help="where result files go")
+    cf.add_argument(
+        "--formats", default="json,md", help="any of json,md,junit (json is always written)"
+    )
+    cf.add_argument(
+        "--fail-on",
+        choices=["fail", "warn", "never"],
+        default="fail",
+        help="exit 1 when a test has this outcome or worse (default: fail)",
+    )
+    cf.add_argument("-q", "--quiet", action="store_true", help="no per-test progress lines")
+    cf.set_defaults(fn=cmd_conformance)
 
     ini = sub.add_parser("init", help="write a starter configuration file")
     ini.add_argument("template", nargs="?", default="synthetic-demo", choices=TEMPLATES)

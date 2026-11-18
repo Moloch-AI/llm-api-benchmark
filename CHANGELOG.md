@@ -30,6 +30,16 @@ First version.
   - "Same calls", a figure for agreement across repetitions;
   - per-check pass counts in the reports.
 - Templates `synthetic-tools` and `molochai-tools`, and `run --dataset`.
+- `llm-bench conformance`: an OpenAI Chat Completions conformance suite.
+  - 22 tests: model listing, the plain and streamed shape, usage, `max_tokens`,
+    `max_completion_tokens`, `stop`, `n`, JSON mode and JSON schema, `logprobs`, temperature
+    validation, tool calls (plain, streamed, tool results and `tool_choice: "none"`), and error
+    bodies.
+  - Outcomes PASS, WARN, FAIL, skip and ERROR. A silently ignored parameter is a FAIL; an explicit
+    4xx is a WARN.
+  - Output as a terminal table, JSON, Markdown and JUnit XML. The exit code makes it a CI gate.
+  - An in-process reference endpoint with 16 switchable quirks, and the `synthetic-conformance`
+    template.
 - Reports: terminal, JSON, CSV (requests and summary), Markdown, and self-contained HTML with SVG
   charts. `compare` adds bootstrap confidence intervals.
 - Credential redaction in terminal output, logs and result files.
